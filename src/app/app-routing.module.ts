@@ -3,25 +3,37 @@ import { Routes, RouterModule } from '@angular/router';
 import { LoginFormComponent, ResetPasswordFormComponent, CreateAccountFormComponent, ChangePasswordFormComponent } from './shared/components';
 import { AuthGuardService } from './shared/services';
 import { HomeComponent } from './pages/home/home.component';
-import { ProfileComponent } from './pages/profile/profile.component';
-import { TasksComponent } from './pages/tasks/tasks.component';
+import { RecipesComponent } from './pages/recipes/recipes.component';
+import { ShoppingListComponent } from './pages/shopping-list/shopping-list.component';
+import { HistoryComponent } from './pages/history/history.component';
+import { OptionsComponent } from './pages/options/options.component';
 import { DxDataGridModule, DxFormModule } from 'devextreme-angular';
 
 const routes: Routes = [
   {
-    path: 'tasks',
-    component: TasksComponent,
-    canActivate: [ AuthGuardService ]
-  },
-  {
-    path: 'profile',
-    component: ProfileComponent,
-    canActivate: [ AuthGuardService ]
-  },
-  {
     path: 'home',
     component: HomeComponent,
     canActivate: [ AuthGuardService ]
+  },
+  {
+    path: 'recipes',
+    component: RecipesComponent,
+    canActivate: [AuthGuardService]
+  },
+  {
+    path: 'shopping-list',
+    component: ShoppingListComponent,
+    canActivate: [AuthGuardService]
+  },
+  {
+    path: 'history',
+    component: HistoryComponent,
+    canActivate: [AuthGuardService]
+  },
+  {
+    path: 'options',
+    component: OptionsComponent,
+    canActivate: [AuthGuardService]
   },
   {
     path: 'login-form',
@@ -50,13 +62,15 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { useHash: true }), DxDataGridModule, DxFormModule],
+  imports: [RouterModule.forRoot(routes), DxDataGridModule, DxFormModule],
   providers: [AuthGuardService],
   exports: [RouterModule],
   declarations: [
     HomeComponent,
-    ProfileComponent,
-    TasksComponent
+    RecipesComponent,
+    ShoppingListComponent,
+    HistoryComponent,
+    OptionsComponent
   ]
 })
 export class AppRoutingModule { }

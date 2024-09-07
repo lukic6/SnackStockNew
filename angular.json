@@ -91,10 +91,14 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "SnackStock:build:production"
+              "buildTarget": "SnackStock:build:production",
+              "liveReload": true,
+              "poll": 1000
             },
             "development": {
-              "buildTarget": "SnackStock:build:development"
+              "buildTarget": "SnackStock:build:development",
+              "liveReload": true,
+              "poll": 1000
             }
           },
           "defaultConfiguration": "development"
