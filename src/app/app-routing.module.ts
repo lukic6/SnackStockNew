@@ -2,17 +2,16 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { LoginFormComponent, ResetPasswordFormComponent, CreateAccountFormComponent, ChangePasswordFormComponent } from './shared/components';
 import { AuthGuardService } from './shared/services';
-import { HomeComponent } from './pages/home/home.component';
 import { RecipesComponent } from './pages/recipes/recipes.component';
 import { ShoppingListComponent } from './pages/shopping-list/shopping-list.component';
 import { HistoryComponent } from './pages/history/history.component';
 import { OptionsComponent } from './pages/options/options.component';
-import { DxDataGridModule, DxFormModule } from 'devextreme-angular';
+import { StockComponent } from './pages/stock/stock.component';
 
 const routes: Routes = [
   {
-    path: 'home',
-    component: HomeComponent,
+    path: 'stock',
+    component: StockComponent,
     canActivate: [ AuthGuardService ]
   },
   {
@@ -57,16 +56,16 @@ const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'home'
+    redirectTo: 'stock'
   }
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes), DxDataGridModule, DxFormModule],
+  imports: [RouterModule.forRoot(routes)],
   providers: [AuthGuardService],
   exports: [RouterModule],
   declarations: [
-    HomeComponent,
+    StockComponent,
     RecipesComponent,
     ShoppingListComponent,
     HistoryComponent,
