@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
+    "@supabase/supabase-js": "^2.45.3",
     "devextreme": "24.1.4",
     "devextreme-angular": "24.1.4",
     "devextreme-schematics": "^1.7.1",
