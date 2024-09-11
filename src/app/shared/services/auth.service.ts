@@ -41,6 +41,7 @@ export class AuthService {
 
       // Store the UUID in localStorage
       localStorage.setItem('userId', user.id);
+      localStorage.setItem('householdId', user.householdId);
       
       // Set the user information
       this._user = { username, avatarUrl: defaultUser.avatarUrl };
@@ -76,7 +77,8 @@ export class AuthService {
       const userId = await this.supabaseService.registerUser(username, password);
 
       // Store the user ID in localStorage
-      localStorage.setItem('userId', userId);
+      localStorage.setItem('userId', userId.userId);
+      localStorage.setItem('householdId', userId.householdId);
 
       // Set the user information
       this._user = { username, avatarUrl: defaultUser.avatarUrl };
@@ -93,6 +95,7 @@ export class AuthService {
   async logOut() {
     this._user = null;
     localStorage.removeItem('userId');
+    localStorage.removeItem('householdId');
     this.router.navigate(['/login-form']);
   }
 }
