@@ -1,119 +1,98 @@
+// src/app/services/auth.service.ts
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, ActivatedRouteSnapshot } from '@angular/router';
+import { Router, ActivatedRouteSnapshot, CanActivate } from '@angular/router';
+import { SupabaseService } from './supabase.service';
 
 export interface IUser {
-  email: string;
+  username: string;
   avatarUrl?: string;
 }
 
 const defaultPath = '/';
 const defaultUser = {
-  email: 'sandra@example.com',
+  username: 'defaultUser',
   avatarUrl: 'https://js.devexpress.com/Demos/WidgetsGallery/JSDemos/images/employees/06.png'
 };
 
 @Injectable()
 export class AuthService {
-  private _user: IUser | null = defaultUser;
+  private _user: IUser | null = null;
+
   get loggedIn(): boolean {
-    return !!this._user;
+    return !!localStorage.getItem('userId');
   }
 
   private _lastAuthenticatedPath: string = defaultPath;
+
   set lastAuthenticatedPath(value: string) {
     this._lastAuthenticatedPath = value;
   }
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private supabaseService: SupabaseService) {}
 
-  async logIn(email: string, password: string) {
-
+  // Log in method using Supabase service
+  async logIn(username: string, password: string) {
     try {
-      // Send request
-      this._user = { ...defaultUser, email };
-      this.router.navigate([this._lastAuthenticatedPath]);
-
-      return {
-        isOk: true,
-        data: this._user
-      };
-    }
-    catch {
-      return {
-        isOk: false,
-        message: "Authentication failed"
-      };
-    }
-  }
-
-  async getUser() {
-    try {
-      // Send request
-
-      return {
-        isOk: true,
-        data: this._user
-      };
-    }
-    catch {
-      return {
-        isOk: false,
-        data: null
-      };
-    }
-  }
-
-  async createAccount(email: string, password: string) {
-    try {
-      // Send request
-
-      this.router.navigate(['/create-account']);
-      return {
-        isOk: true
-      };
-    }
-    catch {
-      return {
-        isOk: false,
-        message: "Failed to create account"
-      };
-    }
-  }
-
-  async changePassword(email: string, recoveryCode: string) {
-    try {
-      // Send request
-
-      return {
-        isOk: true
-      };
-    }
-    catch {
-      return {
-        isOk: false,
-        message: "Failed to change password"
+      const user = await this.supabaseService.loginUser(username, password);
+      
+      if (!user) {
+        return { isOk: false, message: "Authentication failed" };
       }
+
+      // Store the UUID in localStorage
+      localStorage.setItem('userId', user.id);
+      
+      // Set the user information
+      this._user = { username, avatarUrl: defaultUser.avatarUrl };
+      
+      // Navigate to the last authenticated path
+      this.router.navigate([this._lastAuthenticatedPath]);
+      return { isOk: true, data: this._user };
+    } catch {
+      return { isOk: false, message: "Authentication failed" };
     }
   }
 
-  async resetPassword(email: string) {
+  // Fetch the user based on UUID from localStorage
+  async getUser() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      return { isOk: false, data: null };
+    }
+
+    const user = await this.supabaseService.getUserById(userId);
+    
+    if (user) {
+      this._user = { username: user.username, avatarUrl: defaultUser.avatarUrl };
+      return { isOk: true, data: this._user };
+    }
+
+    return { isOk: false, data: null };
+  }
+
+  // Create account method using Supabase service
+  async createAccount(username: string, password: string) {
     try {
-      // Send request
+      const userId = await this.supabaseService.registerUser(username, password);
 
-      return {
-        isOk: true
-      };
-    }
-    catch {
-      return {
-        isOk: false,
-        message: "Failed to reset password"
-      };
+      // Store the user ID in localStorage
+      localStorage.setItem('userId', userId);
+
+      // Set the user information
+      this._user = { username, avatarUrl: defaultUser.avatarUrl };
+
+      // Navigate to the login form or another route
+      this.router.navigate(['/login-form']);
+      return { isOk: true };
+    } catch (error) {
+      return { isOk: false, message: "Failed to create account" };
     }
   }
 
+  // Log out method to clear session
   async logOut() {
     this._user = null;
+    localStorage.removeItem('userId');
     this.router.navigate(['/login-form']);
   }
 }

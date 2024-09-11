@@ -1,26 +1,26 @@
 export const navigation = [
   {
-    text: 'Zaloga',
+    text: 'Stock',
     path: '/stock',
     icon: 'home'
   },
   {
-    text: 'Recepti',
+    text: 'Recipes',
     path: '/recipes',
     icon: 'food'
   },
   {
-    text: 'Nakupovalni listek',
+    text: 'Shopping List',
     path: '/shopping-list',
     icon: 'cart'
   },
   {
-    text: 'Zgodovina',
+    text: 'History',
     path: '/history',
     icon: 'event'
   },
   {
-    text: 'Nastavitve',
+    text: 'Options',
     path: '/options',
     icon: 'preferences'
   }
