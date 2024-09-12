@@ -10,14 +10,16 @@ import { StockItem } from '../../../app-interfaces';
 export class StockComponent implements OnInit {
   stockItems: StockItem[] = [];
   popupVisible: boolean = false;
-  householdId: string | null = localStorage.getItem('householdId'); 
   isEditMode: boolean = false;
   selectedItem: StockItem = { id: '', item: '', quantity: 0, measurement: '' };
 
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private supabaseService: SupabaseService) {
+    this.onSaveItem = this.onSaveItem.bind(this);
+  }
   
   async ngOnInit(): Promise<void> {
-    if (!this.householdId) {
+    const householdId = localStorage.getItem('householdId');
+    if (!householdId) {
       console.error('Household ID is missing from localStorage.');
       return;
     }
@@ -25,8 +27,9 @@ export class StockComponent implements OnInit {
   }
 
   async fetchStock(): Promise<StockItem[]> {
+    const householdId = localStorage.getItem('householdId');
     try {
-      const retreivedStock = await this.supabaseService.getStockItems(this.householdId);
+      const retreivedStock = await this.supabaseService.getStockItems(householdId);
       return retreivedStock;
     } catch (err) {
       console.error(err);
@@ -35,8 +38,9 @@ export class StockComponent implements OnInit {
   }
 
   async addItem(stockItem: StockItem): Promise<void> {
+    const householdId = localStorage.getItem('householdId');
     try {
-      const newItem = await this.supabaseService.addStockItem(stockItem, this.householdId);
+      const newItem = await this.supabaseService.addStockItem(stockItem, householdId);
       this.stockItems.push(newItem);
     } catch (error) {
       console.error('Failed to add stock item:', error);
@@ -44,8 +48,9 @@ export class StockComponent implements OnInit {
   }
 
   async modifyItem(stockItem: StockItem): Promise<void> {
+    const householdId = localStorage.getItem('householdId');
     try {
-      await this.supabaseService.modifyStockItem(stockItem, this.householdId);
+      await this.supabaseService.modifyStockItem(stockItem, householdId);
       const index = this.stockItems.findIndex(item => item.id === stockItem.id);
       if (index > -1) {
         this.stockItems[index] = stockItem;
@@ -56,8 +61,9 @@ export class StockComponent implements OnInit {
   }
 
   async deleteItem(stockItem: StockItem): Promise<void> {
+    const householdId = localStorage.getItem('householdId');
     try {
-      await this.supabaseService.deleteStockItem(stockItem.id, this.householdId);
+      await this.supabaseService.deleteStockItem(stockItem.id, householdId);
       this.stockItems = this.stockItems.filter(item => item.id !== stockItem.id);
     } catch (error) {
       console.error('Failed to delete stock item:', error);
@@ -72,7 +78,7 @@ export class StockComponent implements OnInit {
 
   // Handler for Edit button click - opens the popup in Edit mode
   onEditItemClick(event: any): void {
-    const item = event as StockItem;
+    const item = event.row.data;
     this.isEditMode = true;
     this.selectedItem = { ...item };  // Clone the item for editing
     this.popupVisible = true;  // Show the popup
@@ -80,13 +86,15 @@ export class StockComponent implements OnInit {
 
   // Handler for Delete button click
   async onDeleteItemClick(event: any): Promise<void> {
-    const item = event as StockItem;
+    const item = event.row.data;
     await this.deleteItem(item);
   }
 
   // Handler for Save button - adds or modifies the stock item
   async onSaveItem(): Promise<void> {
-    if (!this.householdId) return;
+    const householdId = localStorage.getItem('householdId');
+    console.log("Household ID in onSaveItem: ", householdId);
+    if (!householdId) return;
 
     if (this.isEditMode) {
       await this.modifyItem(this.selectedItem);
@@ -95,5 +103,9 @@ export class StockComponent implements OnInit {
     }
 
     this.popupVisible = false;  // Hide the popup after saving
+  }
+
+  onPopupClose(): void {
+    this.popupVisible = false;
   }
 }

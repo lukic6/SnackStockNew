@@ -5,7 +5,8 @@
         <dx-button
         icon="plus"
         text="Add Item"
-        stylingMode="outlined"
+        stylingMode="contained"
+        type="default"
         (onClick)="onAddItemClick()"
         ></dx-button>
     </div>
@@ -36,27 +37,34 @@
     <dx-popup
         [visible]="popupVisible"
         [showCloseButton]="true"
-        [width]="400"
-        [height]="300"
-        [dragEnabled]="true"
+        [width]="'90%'"
+        [maxWidth]="420"
+        [height]="'auto'"
+        [dragEnabled]="false"
         [hideOnOutsideClick]="true"
+        (onHiding)="onPopupClose()"
         title="Add/Edit Item"
     >
         <dx-form [formData]="selectedItem">
-        <dxi-item dataField="item" label="Item">
-            <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
-        </dxi-item>
-        <dxi-item dataField="quantity" label="Quantity">
-            <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
-        </dxi-item>
-        <dxi-item dataField="measurement" label="Measurement">
-            <dxi-validation-rule type="required" message="Measurement is required"></dxi-validation-rule>
-        </dxi-item>
+            <dxi-item dataField="item" label="Item">
+                <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
+            </dxi-item>
+            <dxi-item dataField="quantity" label="Quantity">
+                <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
+            </dxi-item>
+            <dxi-item dataField="measurement" label="Measurement">
+                <dxi-validation-rule type="required" message="Measurement is required"></dxi-validation-rule>
+            </dxi-item>
 
-        <!-- Save Button -->
-        <dxi-item itemType="button">
-            <dxo-button-options text="Save" type="default" (onClick)="onSaveItem()"></dxo-button-options>
-        </dxi-item>
+            <!-- Save Button -->
+            <dxi-item itemType="button">
+                <dxo-button-options
+                    text="Save"
+                    type="default"
+                    stylingMode="contained"
+                    [onClick]="onSaveItem"
+                ></dxo-button-options>
+            </dxi-item>
         </dx-form>
     </dx-popup>
 </div>
