@@ -1,7 +1,7 @@
 {
   "items": [],
-  "baseTheme": "material.orange.light",
+  "baseTheme": "fluent.blue.light",
   "assetsBasePath": "../../../node_modules/devextreme/dist/css/",
-  "outputColorScheme": "base",
+  "outputColorScheme": "fluent.blue.light",
   "base": true
 }
