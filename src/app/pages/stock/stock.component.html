@@ -40,7 +40,7 @@
                 <dxo-label text="Item"></dxo-label>
                 <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
             </dxi-item>
-            <dxi-item dataField="quantity" [isRequired]="true">
+            <dxi-item dataField="quantity" [isRequired]="true" editorType="dxNumberBox">
                 <dxo-label text="Quantity"></dxo-label>
                 <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
             </dxi-item>
@@ -69,7 +69,7 @@
             <dxi-item dataField="item" label="Item">
                 <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
             </dxi-item>
-            <dxi-item dataField="quantity" label="Quantity">
+            <dxi-item dataField="quantity" label="Quantity" editorType="dxNumberBox">
                 <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
             </dxi-item>
             <dxi-item dataField="measurement" label="Measurement">

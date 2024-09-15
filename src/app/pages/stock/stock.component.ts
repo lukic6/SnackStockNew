@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { StockItem } from '../../../app-interfaces';
+import notify from 'devextreme/ui/notify';
 
 @Component({
   selector: 'app-stock',
@@ -33,6 +34,7 @@ export class StockComponent implements OnInit {
       return retreivedStock;
     } catch (err) {
       console.error(err);
+      notify("Failed to retrieve the stock. Please reload the page.", "error", 2000);
       return [];
     }
   }
@@ -42,25 +44,39 @@ export class StockComponent implements OnInit {
   }
 
   async addItem(stockItem: StockItem): Promise<void> {
-    const householdId = localStorage.getItem('householdId');
-    try {
-      const newItem = await this.supabaseService.addStockItem(stockItem, householdId);
-      this.stockItems.push(newItem);
-    } catch (error) {
-      console.error('Failed to add stock item:', error);
+    if (stockItem.quantity == 0) {
+      notify("Stock quantity must be greater than zero!", "warning", 2000);
+    } else {
+      const householdId = localStorage.getItem('householdId');
+      try {
+        const newItem = await this.supabaseService.addStockItem(stockItem, householdId);
+        this.stockItems.push(newItem);
+        this.popupVisible = false;
+        notify("Item successfully added!", "success", 2000);
+      } catch (error) {
+        console.error('Failed to add stock item:', error);
+        notify("Failed to added stock item. Please try again.", "error", 2000);
+      }
     }
   }
 
   async modifyItem(stockItem: StockItem): Promise<void> {
     const householdId = localStorage.getItem('householdId');
-    try {
-      await this.supabaseService.modifyStockItem(stockItem, householdId);
-      const index = this.stockItems.findIndex(item => item.id === stockItem.id);
-      if (index > -1) {
-        this.stockItems[index] = stockItem;
+    if (stockItem.quantity == 0) {
+      return await this.deleteItem(stockItem);
+    } else {
+      try {
+        await this.supabaseService.modifyStockItem(stockItem, householdId);
+        const index = this.stockItems.findIndex(item => item.id === stockItem.id);
+        if (index > -1) {
+          this.stockItems[index] = stockItem;
+          this.popupVisible = false;
+          notify("Item successfully updated!", "success", 2000);
+        }
+      } catch (error) {
+        console.error('Failed to modify stock item:', error);
+        notify("Failed to update stock item. Please try again.", "error", 2000);
       }
-    } catch (error) {
-      console.error('Failed to modify stock item:', error);
     }
   }
 
@@ -69,15 +85,17 @@ export class StockComponent implements OnInit {
     try {
       await this.supabaseService.deleteStockItem(stockItem.id, householdId);
       this.stockItems = this.stockItems.filter(item => item.id !== stockItem.id);
+      notify("Item successfully deleted!", "success", 2000);
     } catch (error) {
       console.error('Failed to delete stock item:', error);
+      notify("Failed to delete stock item. Please try again.", "error", 2000);
     }
   }
 
   onAddItemClick(): void {
     this.isEditMode = false;
-    this.selectedItem = { id: '', item: '', quantity: 0, measurement: '' };  // Reset the selected item
-    this.popupVisible = true;  // Show the popup
+    this.selectedItem = { id: '', item: '', quantity: 0, measurement: '' };
+    this.popupVisible = true;
   }
 
   async onRowRemoving(event: any): Promise<void> {
@@ -110,8 +128,6 @@ export class StockComponent implements OnInit {
     } else {
       await this.addItem(this.selectedItem);
     }
-
-    this.popupVisible = false;  // Hide the popup after saving
   }
 
   onPopupClose(): void {
