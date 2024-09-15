@@ -6,11 +6,30 @@
     font-weight: 700;
 }
 
-body, html {
-    overflow-x: hidden;  // Ensure no horizontal scrolling globally
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body, app-root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
   
-  .dx-viewport {
-    width: 100%;
-    max-width: 100vw;
-  }
+.dx-viewport {
+  width: 100%;
+  max-width: 100vw;
+}
+
+app-side-nav-outer-toolbar {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}

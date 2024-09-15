@@ -172,8 +172,8 @@ export class SupabaseService {
   
       // Update user's household ID in the Users table
       const { error: userError } = await this.supabase
-        .from('users')
-        .update({ household_id: newHouseholdId })
+        .from('Users')
+        .update({ householdId: newHouseholdId })
         .eq('id', userId);
   
       if (userError) {
@@ -184,8 +184,8 @@ export class SupabaseService {
       // Update household ID in the Stocks table
       const { error: stockError } = await this.supabase
         .from('Stocks')
-        .update({ household_id: newHouseholdId })
-        .eq('household_id', householdId);
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', householdId);
   
       if (stockError) {
         console.error('Error updating household ID in stocks:', stockError.message);
@@ -195,8 +195,8 @@ export class SupabaseService {
       // Update household ID in the ShoppingLists table
       const { error: shoppingListError } = await this.supabase
         .from('ShoppingLists')
-        .update({ household_id: newHouseholdId })
-        .eq('household_id', householdId);
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', householdId);
   
       if (shoppingListError) {
         console.error('Error updating household ID in shopping lists:', shoppingListError.message);
@@ -206,8 +206,8 @@ export class SupabaseService {
       // Update household ID in the Meals table
       const { error: mealsError } = await this.supabase
         .from('Meals')
-        .update({ household_id: newHouseholdId })
-        .eq('household_id', householdId);
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', householdId);
   
       if (mealsError) {
         console.error('Error updating household ID in meals:', mealsError.message);
