@@ -17,38 +17,14 @@
         [showBorders]="true"
         height="400px"
         (onRowRemoving)="onRowRemoving($event)"
-        (onRowUpdating)="onRowUpdating($event)"
-    >
+        (onEditingStart)="onEditingStart($event)"
+        >
         <dxo-editing
             mode="popup"
             [allowUpdating]="true"
             [allowDeleting]="true"
             [confirmDelete]="false"
         >
-        <dxo-popup
-            [title]="'Edit Item'"
-            [showTitle]="true"
-            [width]="'90%'"
-            [maxWidth]="420"
-            [height]="'auto'"
-            [dragEnabled]="false"
-            [hideOnOutsideClick]="true"
-            (onHiding)="onPopupClose()"
-        ></dxo-popup>
-        <dxo-form [colCount]="1">
-            <dxi-item dataField="item" [isRequired]="true">
-                <dxo-label text="Item"></dxo-label>
-                <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
-            </dxi-item>
-            <dxi-item dataField="quantity" [isRequired]="true" editorType="dxNumberBox">
-                <dxo-label text="Quantity"></dxo-label>
-                <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
-            </dxi-item>
-            <dxi-item dataField="measurement" [isRequired]="true">
-                <dxo-label text="Measurement"></dxo-label>
-                <dxi-validation-rule type="required" message="Measurement is required"></dxi-validation-rule>
-            </dxi-item>
-        </dxo-form>
         </dxo-editing>
         <dxi-column caption="Item" [calculateCellValue]="item_quantity_measurement"></dxi-column>
     </dx-data-grid>
@@ -63,16 +39,16 @@
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
         (onHiding)="onPopupClose()"
-        title="Add Item"
+        title="Add/ Edit Item"
     >
         <dx-form [formData]="selectedItem">
-            <dxi-item dataField="item" label="Item">
+            <dxi-item dataField="item" label="Item" [editorOptions]="{ readOnly: isEditMode }">
                 <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
             </dxi-item>
             <dxi-item dataField="quantity" label="Quantity" editorType="dxNumberBox">
                 <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
             </dxi-item>
-            <dxi-item dataField="measurement" label="Measurement">
+            <dxi-item dataField="measurement" label="Measurement" [editorOptions]="{ readOnly: isEditMode }">
                 <dxi-validation-rule type="required" message="Measurement is required"></dxi-validation-rule>
             </dxi-item>
 

@@ -85,6 +85,7 @@ export class StockComponent implements OnInit {
     try {
       await this.supabaseService.deleteStockItem(stockItem.id, householdId);
       this.stockItems = this.stockItems.filter(item => item.id !== stockItem.id);
+      this.popupVisible = false;
       notify("Item successfully deleted!", "success", 2000);
     } catch (error) {
       console.error('Failed to delete stock item:', error);
@@ -99,23 +100,14 @@ export class StockComponent implements OnInit {
   }
 
   async onRowRemoving(event: any): Promise<void> {
-    const item = event.data as StockItem;
-    const householdId = localStorage.getItem('householdId');
-    try {
-      await this.supabaseService.deleteStockItem(item.id, householdId);
-    } catch (error) {
-      console.error('Failed to delete stock item:', error);
-    }
+    await this.deleteItem(event.data as StockItem);
   }
 
-  async onRowUpdating(event: any): Promise<void> {
-    const updatedItem = {...event.oldData, ...event.newData} as StockItem;
-    const householdId = localStorage.getItem('householdId');
-    try {
-      await this.supabaseService.modifyStockItem(updatedItem, householdId);
-    } catch (error) {
-      console.error('Failed to update stock item:', error);
-    }
+  onEditingStart(event: any): void {
+    event.cancel = true; // Cancel the grid's default editing popup
+    this.isEditMode = true;
+    this.selectedItem = { ...event.data }; // Set the selected item for editing
+    this.popupVisible = true;
   }
 
   // Handler for Save button - adds or modifies the stock item
