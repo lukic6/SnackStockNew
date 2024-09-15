@@ -50,11 +50,7 @@
             </dxi-item>
         </dxo-form>
         </dxo-editing>
-        <!-- Item Column -->
-        <dxi-column dataField="item" caption="Item"></dxi-column>
-
-        <!-- Combined Quantity and Measurement Column -->
-        <dxi-column caption="Quantity" [calculateCellValue]="quantity_measurement"></dxi-column>
+        <dxi-column caption="Item" [calculateCellValue]="item_quantity_measurement"></dxi-column>
     </dx-data-grid>
 
     <!-- Popup for adding/editing items -->

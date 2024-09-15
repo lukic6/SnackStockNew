@@ -36,8 +36,9 @@ export class StockComponent implements OnInit {
       return [];
     }
   }
-  quantity_measurement(rowData: StockItem){
-    return `${rowData.quantity} ${rowData.measurement}`;
+
+  item_quantity_measurement(rowData: StockItem){
+    return `${rowData.item} ${rowData.quantity} ${rowData.measurement}`;
   }
 
   async addItem(stockItem: StockItem): Promise<void> {

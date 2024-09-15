@@ -1,7 +1,7 @@
 <ng-container *ngIf="isAuthenticated(); else unauthenticated">
-  <app-side-nav-outer-toolbar title="{{appInfo.title}}">
+  <app-side-nav-outer-toolbar title="{{appInfo.title}}" style="width: 100%; max-width: 100vw; overflow-x: hidden;">
     <router-outlet></router-outlet>
-    <app-footer>
+    <app-footer style="width: 100%; max-width: 100vw;">
       Copyright © 2011-{{appInfo.currentYear}} {{appInfo.title}} Inc.
       <br/>
       All trademarks or registered trademarks are property of their respective owners.

@@ -10,3 +10,12 @@
         margin-right: 20px;
     }
 }
+.stock-container {
+    width: 100% !important;
+    max-width: 100vw !important;  // Prevents the container from exceeding the viewport width
+
+    .dx-data-grid {
+        width: 100%;
+        overflow-x: auto;
+    }
+}

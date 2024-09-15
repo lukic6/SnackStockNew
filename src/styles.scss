@@ -5,3 +5,12 @@
     padding-left: 1rem !important;
     font-weight: 700;
 }
+
+body, html {
+    overflow-x: hidden;  // Ensure no horizontal scrolling globally
+  }
+  
+  .dx-viewport {
+    width: 100%;
+    max-width: 100vw;
+  }
