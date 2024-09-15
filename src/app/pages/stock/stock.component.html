@@ -16,7 +16,15 @@
         [dataSource]="stockItems"
         [showBorders]="true"
         height="400px"
+        (onRowRemoving)="onRowRemoving($event)"
+        (onRowUpdating)="onRowUpdating($event)"
     >
+        <dxo-editing
+            mode="popup"
+            [allowUpdating]="true"
+            [allowDeleting]="true"
+            [confirmDelete]="false"
+        ></dxo-editing>
         <!-- Item Column -->
         <dxi-column dataField="item" caption="Item"></dxi-column>
 
@@ -25,12 +33,6 @@
 
         <!-- Measurement Column -->
         <dxi-column dataField="measurement" caption="Measurement"></dxi-column>
-
-        <!-- Action Buttons Column (Edit & Delete) -->
-        <dxi-column type="buttons">
-            <dxi-button icon="edit" hint="Edit" (onClick)="onEditItemClick($event)"></dxi-button>
-            <dxi-button icon="trash" hint="Delete" (onClick)="onDeleteItemClick($event)"></dxi-button>
-        </dxi-column>
     </dx-data-grid>
 
     <!-- Popup for adding/editing items -->

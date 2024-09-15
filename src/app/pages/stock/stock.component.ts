@@ -76,18 +76,24 @@ export class StockComponent implements OnInit {
     this.popupVisible = true;  // Show the popup
   }
 
-  // Handler for Edit button click - opens the popup in Edit mode
-  onEditItemClick(event: any): void {
-    const item = event.row.data;
-    this.isEditMode = true;
-    this.selectedItem = { ...item };  // Clone the item for editing
-    this.popupVisible = true;  // Show the popup
+  async onRowRemoving(event: any): Promise<void> {
+    const item = event.data as StockItem;
+    const householdId = localStorage.getItem('householdId');
+    try {
+      await this.supabaseService.deleteStockItem(item.id, householdId);
+    } catch (error) {
+      console.error('Failed to delete stock item:', error);
+    }
   }
 
-  // Handler for Delete button click
-  async onDeleteItemClick(event: any): Promise<void> {
-    const item = event.row.data;
-    await this.deleteItem(item);
+  async onRowUpdating(event: any): Promise<void> {
+    const updatedItem = {...event.oldData, ...event.newData} as StockItem;
+    const householdId = localStorage.getItem('householdId');
+    try {
+      await this.supabaseService.modifyStockItem(updatedItem, householdId);
+    } catch (error) {
+      console.error('Failed to update stock item:', error);
+    }
   }
 
   // Handler for Save button - adds or modifies the stock item
