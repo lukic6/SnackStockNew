@@ -24,7 +24,32 @@
             [allowUpdating]="true"
             [allowDeleting]="true"
             [confirmDelete]="false"
-        ></dxo-editing>
+        >
+        <dxo-popup
+            [title]="'Edit Item'"
+            [showTitle]="true"
+            [width]="'90%'"
+            [maxWidth]="420"
+            [height]="'auto'"
+            [dragEnabled]="false"
+            [hideOnOutsideClick]="true"
+            (onHiding)="onPopupClose()"
+        ></dxo-popup>
+        <dxo-form>
+            <dxi-item dataField="item" [isRequired]="true">
+                <dxo-label text="Item"></dxo-label>
+                <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
+            </dxi-item>
+            <dxi-item dataField="quantity" [isRequired]="true">
+                <dxo-label text="Quantity"></dxo-label>
+                <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
+            </dxi-item>
+            <dxi-item dataField="measurement" [isRequired]="true">
+                <dxo-label text="Measurement"></dxo-label>
+                <dxi-validation-rule type="required" message="Measurement is required"></dxi-validation-rule>
+            </dxi-item>
+        </dxo-form>
+        </dxo-editing>
         <!-- Item Column -->
         <dxi-column dataField="item" caption="Item"></dxi-column>
 
@@ -45,7 +70,7 @@
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
         (onHiding)="onPopupClose()"
-        title="Add/Edit Item"
+        title="Add Item"
     >
         <dx-form [formData]="selectedItem">
             <dxi-item dataField="item" label="Item">
