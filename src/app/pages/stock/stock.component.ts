@@ -110,6 +110,29 @@ export class StockComponent implements OnInit {
     this.popupVisible = true;
   }
 
+  handleFocusIn(e: any) {
+    if (e.component.option('value') === 0) {
+      e.component.option('value', '');
+    }
+  }
+  
+  handleFocusOut(e: any) {
+    if (!e.component.option('value')) {
+      e.component.option('value', 0); // Set it back to 0 if empty
+    }
+  }
+  
+  handleKeyDown(e: any) {
+    const event = e.event;
+    if (event.key === ",") {
+      event.preventDefault();
+      event.stopPropagation();
+      var input = e.element.querySelector("input.dx-texteditor-input");
+      e.component._setInputText(input.value + ".");
+      input.setSelectionRange(input.value.length, input.value.length);    
+    }
+  }
+
   // Handler for Save button - adds or modifies the stock item
   async onSaveItem(): Promise<void> {
     const householdId = localStorage.getItem('householdId');

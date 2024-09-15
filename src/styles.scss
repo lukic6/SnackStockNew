@@ -33,3 +33,8 @@ app-side-nav-outer-toolbar {
   max-width: 100vw;
   overflow-x: hidden;
 }
+
+.dx-texteditor.dx-state-disabled .dx-texteditor-input {
+  background-color: #F2F2F2;
+  color: black;
+}

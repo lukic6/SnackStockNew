@@ -45,7 +45,13 @@
             <dxi-item dataField="item" label="Item" [editorOptions]="{ disabled: isEditMode }">
                 <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
             </dxi-item>
-            <dxi-item dataField="quantity" label="Quantity" editorType="dxNumberBox">
+            <dxi-item dataField="quantity" label="Quantity" editorType="dxNumberBox" [editorOptions]="{
+                value: 0,
+                format: 'decimal',
+                onFocusIn: handleFocusIn,
+                onFocusOut: handleFocusOut,
+                onKeyDown: handleKeyDown
+            }">
                 <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
             </dxi-item>
             <dxi-item dataField="measurement" label="Measurement" [editorOptions]="{ disabled: isEditMode }">
