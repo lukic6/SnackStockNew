@@ -41,6 +41,7 @@ export class AuthService {
 
       // Store the UUID in localStorage
       localStorage.setItem('userId', user.id);
+      localStorage.setItem('username', user.username);
       localStorage.setItem('householdId', user.householdId);
       
       // Set the user information
@@ -78,6 +79,7 @@ export class AuthService {
 
       // Store the user ID in localStorage
       localStorage.setItem('userId', userId.userId);
+      localStorage.setItem('username', userId.username);
       localStorage.setItem('householdId', userId.householdId);
 
       // Set the user information
@@ -95,6 +97,7 @@ export class AuthService {
   async logOut() {
     this._user = null;
     localStorage.removeItem('userId');
+    localStorage.removeItem('username');
     localStorage.removeItem('householdId');
     this.router.navigate(['/login-form']);
   }

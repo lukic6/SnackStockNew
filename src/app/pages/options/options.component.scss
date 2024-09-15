@@ -1,0 +1,21 @@
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+::ng-deep dx-button {
+    flex-shrink: 0;
+    width: 150px; // Set all buttons to the same width
+}
+
+::ng-deep dx-text-box {
+    flex-grow: 1;
+}

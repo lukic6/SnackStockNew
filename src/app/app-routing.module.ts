@@ -8,7 +8,7 @@ import { HistoryComponent } from './pages/history/history.component';
 import { OptionsComponent } from './pages/options/options.component';
 import { StockComponent } from './pages/stock/stock.component';
 import { DxiButtonModule, DxiItemModule, DxiValidationRuleModule, DxoButtonOptionsModule } from 'devextreme-angular/ui/nested';
-import { DxButtonModule, DxDataGridModule, DxFormModule, DxPopupModule } from 'devextreme-angular';
+import { DxButtonModule, DxDataGridModule, DxFormModule, DxPopupModule, DxTextBoxModule } from 'devextreme-angular';
 
 const routes: Routes = [
   {
@@ -61,7 +61,8 @@ const routes: Routes = [
     DxoButtonOptionsModule,
     DxiValidationRuleModule,
     DxiItemModule,
-    DxFormModule
+    DxFormModule,
+    DxTextBoxModule
   ],
   providers: [AuthGuardService],
   exports: [RouterModule],

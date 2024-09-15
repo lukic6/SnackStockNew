@@ -1,1 +1,20 @@
-<p>options works!</p>
+<div class="options-container">
+    <h3 class="page-header">Options</h3>
+    <!-- Username Section -->
+    <div class="form-group">
+        <dx-text-box [(value)]="username" placeholder="Enter your new username"></dx-text-box>
+        <dx-button text="Change Username" stylingMode="contained" type="default" (onClick)="onChangeUsername()"></dx-button>
+    </div>
+
+    <!-- Current Household UUID Section -->
+    <div class="form-group">
+        <dx-text-box value="{{ householdId }}" [disabled]="true"></dx-text-box>
+        <dx-button text="Copy to clipboard" class="copy-button" stylingMode="contained" type="default"></dx-button>
+    </div>
+
+    <!-- Change Household Section -->
+    <div class="form-group">
+        <dx-text-box [(value)]="newHouseholdId" placeholder="Enter new household UUID"></dx-text-box>
+        <dx-button text="Change Household" stylingMode="contained" type="default" (onClick)="onChangeHousehold()"></dx-button>
+    </div>
+</div>
