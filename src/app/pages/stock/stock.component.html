@@ -35,7 +35,7 @@
             [hideOnOutsideClick]="true"
             (onHiding)="onPopupClose()"
         ></dxo-popup>
-        <dxo-form>
+        <dxo-form [colCount]="1">
             <dxi-item dataField="item" [isRequired]="true">
                 <dxo-label text="Item"></dxo-label>
                 <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
@@ -53,11 +53,8 @@
         <!-- Item Column -->
         <dxi-column dataField="item" caption="Item"></dxi-column>
 
-        <!-- Quantity Column -->
-        <dxi-column dataField="quantity" caption="Quantity"></dxi-column>
-
-        <!-- Measurement Column -->
-        <dxi-column dataField="measurement" caption="Measurement"></dxi-column>
+        <!-- Combined Quantity and Measurement Column -->
+        <dxi-column caption="Quantity" [calculateCellValue]="quantity_measurement"></dxi-column>
     </dx-data-grid>
 
     <!-- Popup for adding/editing items -->

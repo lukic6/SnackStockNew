@@ -36,6 +36,9 @@ export class StockComponent implements OnInit {
       return [];
     }
   }
+  quantity_measurement(rowData: StockItem){
+    return `${rowData.quantity} ${rowData.measurement}`;
+  }
 
   async addItem(stockItem: StockItem): Promise<void> {
     const householdId = localStorage.getItem('householdId');
@@ -99,7 +102,6 @@ export class StockComponent implements OnInit {
   // Handler for Save button - adds or modifies the stock item
   async onSaveItem(): Promise<void> {
     const householdId = localStorage.getItem('householdId');
-    console.log("Household ID in onSaveItem: ", householdId);
     if (!householdId) return;
 
     if (this.isEditMode) {
