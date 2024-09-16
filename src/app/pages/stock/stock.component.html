@@ -43,6 +43,17 @@
     >
         <dx-form [formData]="selectedItem">
             <dxi-item dataField="item" label="Item" [editorOptions]="{ disabled: isEditMode }">
+                <dx-autocomplete
+                    [(value)]="selectedItem.item"
+                    [dataSource]="ingredientSuggestions"
+                    [minSearchLength]="2"
+                    [searchTimeout]="500"
+                    valueExpr="name"
+                    displayExpr="name"
+                    (onValueChanged)="onItemSelected($event)"
+                    (onInput)="onItemInput($event)"
+                >
+                </dx-autocomplete>
                 <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
             </dxi-item>
             <dxi-item dataField="quantity" label="Quantity" editorType="dxNumberBox" [editorOptions]="{

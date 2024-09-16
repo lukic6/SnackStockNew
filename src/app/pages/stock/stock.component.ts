@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { SupabaseService } from '../../shared/services/supabase.service';
+import { SPOONACULAR_API_KEY, SPOONACULAR_AUTOCOMPLETE_URL } from '../../../spoonacular-api-creds';
 import { StockItem } from '../../../app-interfaces';
 import notify from 'devextreme/ui/notify';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-stock',
@@ -13,8 +15,9 @@ export class StockComponent implements OnInit {
   popupVisible: boolean = false;
   isEditMode: boolean = false;
   selectedItem: StockItem = { id: '', item: '', quantity: 0, measurement: '' };
+  ingredientSuggestions: any[] = [];
 
-  constructor(private supabaseService: SupabaseService) {
+  constructor(private supabaseService: SupabaseService, private http: HttpClient) {
     this.onSaveItem = this.onSaveItem.bind(this);
   }
   
@@ -41,6 +44,25 @@ export class StockComponent implements OnInit {
 
   item_quantity_measurement(rowData: StockItem){
     return `${rowData.item} ${rowData.quantity} ${rowData.measurement}`;
+  }
+
+  onItemInput(event: any) {
+    const query = event.component.option('text');
+    if (query.length > 1) {
+      this.fetchIngredientSuggestions(query);
+    }
+  }
+
+  fetchIngredientSuggestions(query: string) {
+    const url = `${SPOONACULAR_AUTOCOMPLETE_URL}?query=${query}&number=5&apiKey=${SPOONACULAR_API_KEY}`;
+    this.http.get(url)
+      .subscribe((data: any) => {
+        this.ingredientSuggestions = data;
+      });
+  }
+
+  onItemSelected(event: any) {
+    this.selectedItem.item = event.value;
   }
 
   async addItem(stockItem: StockItem): Promise<void> {

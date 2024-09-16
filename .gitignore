@@ -44,3 +44,4 @@ Thumbs.db
 # Manually added files
 src/devextreme-license.ts
 src/supabase-creds.ts
+src/spoonacular-api-creds.ts
