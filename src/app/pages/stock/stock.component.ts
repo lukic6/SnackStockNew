@@ -46,19 +46,23 @@ export class StockComponent implements OnInit {
     return `${rowData.item} ${rowData.quantity} ${rowData.measurement}`;
   }
 
-  onItemInput(event: any) {
+  async onItemInput(event: any) {
     const query = event.component.option('text');
     if (query.length > 1) {
-      this.fetchIngredientSuggestions(query);
+      await this.fetchIngredientSuggestions(query);
     }
   }
 
-  fetchIngredientSuggestions(query: string) {
+  async fetchIngredientSuggestions(query: string) {
     const url = `${SPOONACULAR_AUTOCOMPLETE_URL}?query=${query}&number=5&apiKey=${SPOONACULAR_API_KEY}`;
-    this.http.get(url)
-      .subscribe((data: any) => {
-        this.ingredientSuggestions = data;
-      });
+    
+    try {
+      const data: any = await this.http.get(url).toPromise();
+      this.ingredientSuggestions = data;
+    } catch (error) {
+      console.error('Error fetching ingredient suggestions:', error);
+      notify("Failed to fetch ingredient suggestions. Please try again later.", "error", 2000);
+    }
   }
 
   onItemSelected(event: any) {
