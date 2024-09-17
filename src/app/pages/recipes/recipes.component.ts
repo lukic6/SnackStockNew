@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import notify from 'devextreme/ui/notify';
-import { EDAMAM_APP_ID, EDAMAM_APP_KEY, EDAMAM_RECIPE_SEARCH_URL } from '../../../api-creds'
+import { EDAMAM_APP_ID, EDAMAM_APP_KEY, EDAMAM_RECIPE_SEARCH_URL, SPOONACULAR_API_KEY } from '../../../api-creds'
 
 @Component({
   selector: 'app-recipes',
@@ -12,6 +12,7 @@ import { EDAMAM_APP_ID, EDAMAM_APP_KEY, EDAMAM_RECIPE_SEARCH_URL } from '../../.
   styleUrl: './recipes.component.scss'
 })
 export class RecipesComponent implements OnInit {
+  selectedRecipe: any;
   recommendedRecipes: any[] = [];
   mealSuggestions: any[] = [];
   popupVisible: boolean = false;
@@ -41,26 +42,24 @@ export class RecipesComponent implements OnInit {
         console.error('Household ID is missing from localStorage.');
         return;
       }
-
+  
       const stockItems = await this.supabaseService.getStockItems(householdId);
       if (stockItems.length === 0) {
         // No stock items, do not fetch recommended recipes
         return;
       }
-
+  
       // Get the list of ingredients from the stock
       const ingredients = stockItems.map((item) => item.item).join(',');
-
-      const url = `${EDAMAM_RECIPE_SEARCH_URL}?q=${encodeURIComponent(
+  
+      const url = `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(
         ingredients
-      )}&app_id=${EDAMAM_APP_ID}&app_key=${
-        EDAMAM_APP_KEY
-      }&to=5`;
-
+      )}&number=5&ranking=1&apiKey=${SPOONACULAR_API_KEY}`;
+  
       this.http.get(url).subscribe(
         (data: any) => {
-          if (data.hits && data.hits.length > 0) {
-            this.recommendedRecipes = data.hits.map((hit: any) => hit.recipe);
+          if (data && data.length > 0) {
+            this.recommendedRecipes = data;
           } else {
             this.recommendedRecipes = [];
           }
@@ -102,14 +101,14 @@ export class RecipesComponent implements OnInit {
   }
 
   fetchMealSuggestions(query: string): void {
-    const url = `${EDAMAM_RECIPE_SEARCH_URL}?q=${encodeURIComponent(
+    const url = `https://api.spoonacular.com/recipes/autocomplete?query=${encodeURIComponent(
       query
-    )}&app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}&to=10`;
-
+    )}&number=5&apiKey=${SPOONACULAR_API_KEY}&metaInformation=true`;
+  
     this.http.get(url).subscribe(
       (data: any) => {
-        if (data.hits && data.hits.length > 0) {
-          this.mealSuggestions = data.hits.map((hit: any) => hit.recipe);
+        if (data && data.length > 0) {
+          this.mealSuggestions = data;
         } else {
           this.mealSuggestions = [];
         }
@@ -126,13 +125,46 @@ export class RecipesComponent implements OnInit {
   }
 
   onMealSelected(event: any): void {
-    // Optionally handle meal selection
+    const selectedRecipe = this.mealSuggestions.find(
+      (recipe) => recipe.title === event.component.option('value')
+    );
+  
+    if (selectedRecipe) {
+      this.fetchRecipeDetails(selectedRecipe.id);
+    }
   }
+  
 
   onRecipeClick(event: any): void {
     const recipe = event.itemData;
-    // Handle recipe click, e.g., navigate to a recipe details page
+    this.fetchRecipeDetails(recipe.id);
     console.log('Selected Recipe:', recipe);
-    notify(`Selected Recipe: ${recipe.label}`, 'success', 2000);
+    notify(`Selected Recipe: ${recipe.title}`, 'success', 2000);
   }
+  onMealSuggestionClick(event: any): void {
+    const recipe = event.itemData;
+    this.fetchRecipeDetails(recipe.id);
+  }
+
+  fetchRecipeDetails(recipeId: number): void {
+    const url = `https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=false&apiKey=${SPOONACULAR_API_KEY}`;
+  
+    this.http.get(url).subscribe(
+      (data: any) => {
+        // Handle the recipe details (e.g., display in a new popup or navigate to a detail page)
+        console.log('Recipe Details:', data);
+        // For example, you might store it in a variable and display it in the template
+        this.selectedRecipe = data;
+      },
+      (error) => {
+        console.error('Error fetching recipe details:', error);
+        notify(
+          'Failed to fetch recipe details. Please try again later.',
+          'error',
+          2000
+        );
+      }
+    );
+  }
+  
 }

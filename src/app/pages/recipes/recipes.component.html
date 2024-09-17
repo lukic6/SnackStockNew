@@ -10,9 +10,10 @@
         >
         <div *dxTemplate="let item of 'item'">
             <div class="recipe-item">
-            <h4>{{ item.label }}</h4>
-            <p>Calories: {{ item.calories | number:'1.0-0' }}</p>
-            <p>Ingredients: {{ item.ingredientLines.length }}</p>
+            <h4>{{ item.title }}</h4>
+            <img [src]="item.image" alt="{{ item.title }}" width="100" />
+            <p>Used Ingredients: {{ item.usedIngredientCount }}</p>
+            <p>Missing Ingredients: {{ item.missedIngredientCount }}</p>
             </div>
         </div>
         </dx-list>
@@ -46,7 +47,8 @@
             [dataSource]="mealSuggestions"
             [minSearchLength]="3"
             [searchTimeout]="500"
-            displayExpr="label"
+            valueExpr="title"
+            displayExpr="title"
             (onValueChanged)="onMealSelected($event)"
             (onInput)="onMealInput($event)"
         ></dx-autocomplete>
@@ -56,17 +58,34 @@
             [dataSource]="mealSuggestions"
             [height]="300"
             [showSelectionControls]="false"
-            (onItemClick)="onRecipeClick($event)"
+            (onItemClick)="onMealSuggestionClick($event)"
             *ngIf="mealSuggestions && mealSuggestions.length > 0"
         >
             <div *dxTemplate="let item of 'item'">
-            <div class="recipe-item">
-                <h4>{{ item.label }}</h4>
-                <p>Calories: {{ item.calories | number:'1.0-0' }}</p>
-                <p>Ingredients: {{ item.ingredientLines.length }}</p>
-            </div>
+                <div class="recipe-item">
+                    <h4>{{ item.title }}</h4>
+                    <img [src]="item.image" alt="{{ item.title }}" width="100" />
+                </div>
             </div>
         </dx-list>
+        </div>
+    </dx-popup>
+
+    <!-- Recipe Details Popup -->
+    <dx-popup
+        [visible]="selectedRecipe != null"
+        [showCloseButton]="true"
+        [width]="600"
+        [height]="'auto'"
+        [dragEnabled]="false"
+        [hideOnOutsideClick]="true"
+        (onHiding)="selectedRecipe = null"
+        title="{{ selectedRecipe?.title }}"
+    >
+        <div class="popup-content" *ngIf="selectedRecipe">
+        <img [src]="selectedRecipe.image" alt="{{ selectedRecipe.title }}" width="100%" />
+        <div [innerHTML]="selectedRecipe.summary"></div>
+        <!-- Add more details as needed -->
         </div>
     </dx-popup>
 </div>
