@@ -8,7 +8,8 @@ import { HistoryComponent } from './pages/history/history.component';
 import { OptionsComponent } from './pages/options/options.component';
 import { StockComponent } from './pages/stock/stock.component';
 import { DxiButtonModule, DxiItemModule, DxiValidationRuleModule, DxoButtonOptionsModule } from 'devextreme-angular/ui/nested';
-import { DxAutocompleteModule, DxButtonModule, DxDataGridModule, DxFormModule, DxPopupModule, DxTextBoxModule } from 'devextreme-angular';
+import { DxAutocompleteModule, DxButtonModule, DxDataGridModule, DxFormModule, DxListModule, DxPopupModule, DxTextBoxModule } from 'devextreme-angular';
+import { CommonModule } from '@angular/common';
 
 const routes: Routes = [
   {
@@ -53,7 +54,8 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes), 
+  imports: [RouterModule.forRoot(routes),
+    CommonModule,
     DxButtonModule,
     DxDataGridModule,
     DxPopupModule,
@@ -63,7 +65,8 @@ const routes: Routes = [
     DxiItemModule,
     DxFormModule,
     DxTextBoxModule,
-    DxAutocompleteModule
+    DxAutocompleteModule,
+    DxListModule
   ],
   providers: [AuthGuardService],
   exports: [RouterModule],

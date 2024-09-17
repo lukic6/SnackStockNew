@@ -1,1 +1,72 @@
-<p>recipes works!</p>
+<div class="recipes-container">
+    <!-- Recommended Recipes Section -->
+    <div *ngIf="recommendedRecipes && recommendedRecipes.length > 0">
+        <h3 class="section-header">Recommended Recipes</h3>
+        <dx-list
+        [dataSource]="recommendedRecipes"
+        [height]="400"
+        [showSelectionControls]="false"
+        (onItemClick)="onRecipeClick($event)"
+        >
+        <div *dxTemplate="let item of 'item'">
+            <div class="recipe-item">
+            <h4>{{ item.label }}</h4>
+            <p>Calories: {{ item.calories | number:'1.0-0' }}</p>
+            <p>Ingredients: {{ item.ingredientLines.length }}</p>
+            </div>
+        </div>
+        </dx-list>
+    </div>
+    <h4 *ngIf="!recommendedRecipes || recommendedRecipes.length == 0">No recommendations.</h4>
+
+    <!-- "Other Meals" Button -->
+    <div class="other-meals-button">
+        <dx-button
+        text="Other Meals"
+        stylingMode="contained"
+        type="default"
+        (onClick)="onOtherMealsClick()"
+        ></dx-button>
+    </div>
+
+    <!-- Popup for Other Meals -->
+    <dx-popup
+        [visible]="popupVisible"
+        [showCloseButton]="true"
+        [width]="600"
+        [height]="'auto'"
+        [dragEnabled]="false"
+        [hideOnOutsideClick]="true"
+        (onHiding)="onPopupClose()"
+        title="Search for Meals"
+    >
+        <div class="popup-content">
+        <dx-autocomplete
+            [(value)]="searchQuery"
+            [dataSource]="mealSuggestions"
+            [minSearchLength]="3"
+            [searchTimeout]="500"
+            displayExpr="label"
+            (onValueChanged)="onMealSelected($event)"
+            (onInput)="onMealInput($event)"
+        ></dx-autocomplete>
+
+        <!-- Display search results -->
+        <dx-list
+            [dataSource]="mealSuggestions"
+            [height]="300"
+            [showSelectionControls]="false"
+            (onItemClick)="onRecipeClick($event)"
+            *ngIf="mealSuggestions && mealSuggestions.length > 0"
+        >
+            <div *dxTemplate="let item of 'item'">
+            <div class="recipe-item">
+                <h4>{{ item.label }}</h4>
+                <p>Calories: {{ item.calories | number:'1.0-0' }}</p>
+                <p>Ingredients: {{ item.ingredientLines.length }}</p>
+            </div>
+            </div>
+        </dx-list>
+        </div>
+    </dx-popup>
+</div>

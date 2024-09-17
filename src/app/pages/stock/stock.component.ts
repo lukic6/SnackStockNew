@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { SupabaseService } from '../../shared/services/supabase.service';
-import { SPOONACULAR_API_KEY, SPOONACULAR_AUTOCOMPLETE_URL } from '../../../spoonacular-api-creds';
+import { SPOONACULAR_API_KEY, SPOONACULAR_AUTOCOMPLETE_URL } from '../../../api-creds';
 import { StockItem } from '../../../app-interfaces';
 import notify from 'devextreme/ui/notify';
 import { HttpClient } from '@angular/common/http';
@@ -167,7 +167,17 @@ export class StockComponent implements OnInit {
     if (this.isEditMode) {
       await this.modifyItem(this.selectedItem);
     } else {
-      await this.addItem(this.selectedItem);
+      const existingItem = this.stockItems.find(item => item.item.toLowerCase() === this.selectedItem.item.toLowerCase());
+      if (existingItem) {
+        // If item exists, add the quantity to the existing one
+        existingItem.quantity += this.selectedItem.quantity;
+    
+        // Call modifyItem to update the existing item in the database
+        await this.modifyItem(existingItem);
+      } else {
+        // If item doesn't exist, add a new one
+        await this.addItem(this.selectedItem);
+      }
     }
   }
 
