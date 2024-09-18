@@ -52,6 +52,7 @@
                     displayExpr="name"
                     (onValueChanged)="onItemSelected($event)"
                     (onInput)="onItemInput($event)"
+                    (onFocusOut)="onItemFocusOut($event)"
                     [disabled]="isEditMode"
                 >
                 </dx-autocomplete>
@@ -66,7 +67,14 @@
             }">
                 <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
             </dxi-item>
-            <dxi-item dataField="unit" label="Unit" [editorOptions]="{ disabled: isEditMode }">
+            <dxi-item dataField="unit" label="Unit">
+                <dx-select-box
+                    [(value)]="selectedItem.unit"
+                    [dataSource]="ingredientUnits"
+                    [disabled]="isEditMode"
+                    placeholder="Select a unit"
+                >
+                </dx-select-box>
                 <dxi-validation-rule type="required" message="Unit is required"></dxi-validation-rule>
             </dxi-item>
 

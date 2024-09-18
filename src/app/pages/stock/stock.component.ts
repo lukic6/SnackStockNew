@@ -18,6 +18,7 @@ export class StockComponent implements OnInit {
   isEditMode: boolean = false;
   selectedItem: StockItem = { id: '', item: '', quantity: 0, unit: '' };
   ingredientSuggestions: any[] = [];
+  ingredientUnits: string[] = [];
   searchSubject: Subject<string> = new Subject<string>();
 
   constructor(private supabaseService: SupabaseService, private http: HttpClient) {
@@ -63,11 +64,16 @@ export class StockComponent implements OnInit {
   }
 
   async fetchIngredientSuggestions(query: string) {
-    const url = `${SPOONACULAR_AUTOCOMPLETE_URL}?query=${query}&number=5&apiKey=${SPOONACULAR_API_KEY}`;
+    const url = `${SPOONACULAR_AUTOCOMPLETE_URL}?query=${query}&number=5&metaInformation=true&apiKey=${SPOONACULAR_API_KEY}`;
     
     try {
       const data: any = await this.http.get(url).toPromise();
-      this.ingredientSuggestions = data;
+      this.ingredientSuggestions = data.map((ingredient: any) => ({
+        name: ingredient.name,
+        image: ingredient.image,
+        id: ingredient.id,
+        possibleUnits: ingredient.possibleUnits
+      }));
     } catch (error) {
       console.error('Error fetching ingredient suggestions:', error);
       notify("Failed to fetch ingredient suggestions. Please try again later.", "error", 2000);
@@ -75,7 +81,36 @@ export class StockComponent implements OnInit {
   }
 
   onItemSelected(event: any) {
-    this.selectedItem.item = event.value;
+    console.log(event);
+    const selectedItemName = event.value;
+    const selectedIngredient = this.ingredientSuggestions.find((ingredient: any) => ingredient.name === selectedItemName);
+    if (selectedIngredient) {
+      // Set the item name
+      this.selectedItem.item = selectedIngredient.name;
+
+      // Set possible units if available
+      if (selectedIngredient.possibleUnits && selectedIngredient.possibleUnits.length > 0) {
+        this.selectedItem.unit = selectedIngredient.possibleUnits[0]; // Default to the first unit
+        this.ingredientUnits = selectedIngredient.possibleUnits; // Store all possible units for the select box
+      } else {
+        this.selectedItem.unit = ''; // Default to empty if no units are found
+        this.ingredientUnits = [];   // Empty the units list
+      }
+    }
+  }
+
+  onItemFocusOut(event: any) {
+    const selectedItemName = event.component.option('text');
+
+    const selectedIngredient = this.ingredientSuggestions.find((ingredient: any) => ingredient.name === selectedItemName);
+    if (selectedIngredient) {
+      this.selectedItem.item = selectedIngredient.name;
+
+      if (!this.selectedItem.unit && selectedIngredient.possibleUnits && selectedIngredient.possibleUnits.length > 0) {
+        this.selectedItem.unit = selectedIngredient.possibleUnits[0]; // Default to the first unit
+        this.ingredientUnits = selectedIngredient.possibleUnits; // Update the select box options
+      }
+    }
   }
 
   async addItem(stockItem: StockItem): Promise<void> {

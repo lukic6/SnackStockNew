@@ -195,7 +195,6 @@ export class SupabaseService {
       return false;
     }
   
-    // The household exists, now proceed to update all relevant tables
     try {
       const userId = localStorage.getItem('userId');
   
@@ -208,6 +207,30 @@ export class SupabaseService {
       if (userError) {
         console.error('Error updating household ID in users:', userError.message);
         throw new Error('Failed to update household ID for the user.');
+      }
+  
+      // Increment the member count of the new household
+      const { error: incrementError } = await this.supabase
+        .from('Households')
+        .update({ member: this.supabase.rpc('increment_member', { household_id: newHouseholdId }) })
+        .eq('id', newHouseholdId);
+  
+      if (incrementError) {
+        console.error('Error incrementing member count in new household:', incrementError.message);
+        throw new Error('Failed to update member count in new household.');
+      }
+  
+      // Decrement the member count of the previous household
+      if (householdId) {
+        const { error: decrementError } = await this.supabase
+          .from('Households')
+          .update({ member: this.supabase.rpc('decrement_member', { household_id: householdId }) })
+          .eq('id', householdId);
+  
+        if (decrementError) {
+          console.error('Error decrementing member count in previous household:', decrementError.message);
+          throw new Error('Failed to update member count in previous household.');
+        }
       }
   
       // Update household ID in the Stocks table
@@ -249,6 +272,6 @@ export class SupabaseService {
       console.error('Error updating household ID across tables:', error);
       return false;
     }
-  }
+  }  
   /// OPTIONS endregion
 }
