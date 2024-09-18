@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { supabaseKey, supabaseUrl } from '../../../supabase-creds';
-import { StockItem } from '../../../app-interfaces';
+import { StockItem, MealItem } from '../../../app-interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -90,7 +90,7 @@ export class SupabaseService {
         householdId,
         item: stockItem.item,
         quantity: stockItem.quantity,
-        measurement: stockItem.measurement
+        unit: stockItem.unit
       })
       .select();
 
@@ -108,7 +108,7 @@ export class SupabaseService {
       .update({
         item: stockItem.item,
         quantity: stockItem.quantity,
-        measurement: stockItem.measurement
+        unit: stockItem.unit
       })
       .eq('id', stockItem.id)
       .eq('householdId', householdId);
@@ -132,6 +132,35 @@ export class SupabaseService {
     }
   }
   /// STOCK endregion
+  /// RECIPES region
+  async addMeal(meal: any): Promise<any> {
+    const { data, error } = await this.supabase
+      .from('Meals')
+      .insert([meal])
+      .select();
+  
+    return { data, error };
+  }
+
+  async addMealItem(mealItem: MealItem): Promise<any> {
+    const { data, error } = await this.supabase
+      .from('MealItems')
+      .insert([mealItem]);
+  
+    return { data, error };
+  }
+
+  async addShoppingListItem(shoppingItem: { householdId: string; item: string; quantity: number; unit: string; active: boolean }): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('ShoppingLists')
+      .insert([shoppingItem]);
+  
+      if (error) {
+        console.error('Error adding item to shopping list:', error.message);
+        throw error;
+      }
+  }
+  /// RECIPES endregion
   /// OPTIONS region
   async updateUsername(newUsername: string): Promise<void> {
     const userId = localStorage.getItem('userId');
@@ -221,7 +250,5 @@ export class SupabaseService {
       return false;
     }
   }
-  
-
   /// OPTIONS endregion
 }

@@ -2,5 +2,13 @@ export interface StockItem {
     id: string;
     item: string;
     quantity: number;
-    measurement: string;
+    unit: string;
+}
+
+export interface MealItem {
+    id: string;
+    householdId: string;
+    item: string;
+    quantity: number;
+    unit: string;
 }

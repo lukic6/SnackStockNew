@@ -16,7 +16,7 @@ export class StockComponent implements OnInit {
   stockItems: StockItem[] = [];
   popupVisible: boolean = false;
   isEditMode: boolean = false;
-  selectedItem: StockItem = { id: '', item: '', quantity: 0, measurement: '' };
+  selectedItem: StockItem = { id: '', item: '', quantity: 0, unit: '' };
   ingredientSuggestions: any[] = [];
   searchSubject: Subject<string> = new Subject<string>();
 
@@ -42,8 +42,8 @@ export class StockComponent implements OnInit {
   async fetchStock(): Promise<StockItem[]> {
     const householdId = localStorage.getItem('householdId');
     try {
-      const retreivedStock = await this.supabaseService.getStockItems(householdId);
-      return retreivedStock;
+      const retrievedStock = await this.supabaseService.getStockItems(householdId);
+      return retrievedStock;
     } catch (err) {
       console.error(err);
       notify("Failed to retrieve the stock. Please reload the page.", "error", 2000);
@@ -51,8 +51,8 @@ export class StockComponent implements OnInit {
     }
   }
 
-  item_quantity_measurement(rowData: StockItem){
-    return `${rowData.item} ${rowData.quantity} ${rowData.measurement}`;
+  item_quantity_unit(rowData: StockItem){
+    return `${rowData.item} ${rowData.quantity} ${rowData.unit}`;
   }
 
   async onItemInput(event: any) {
@@ -130,7 +130,7 @@ export class StockComponent implements OnInit {
 
   onAddItemClick(): void {
     this.isEditMode = false;
-    this.selectedItem = { id: '', item: '', quantity: 0, measurement: '' };
+    this.selectedItem = { id: '', item: '', quantity: 0, unit: '' };
     this.popupVisible = true;
   }
 

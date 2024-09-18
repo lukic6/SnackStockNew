@@ -83,9 +83,30 @@
         title="{{ selectedRecipe?.title }}"
     >
         <div class="popup-content" *ngIf="selectedRecipe">
-        <img [src]="selectedRecipe.image" alt="{{ selectedRecipe.title }}" width="100%" />
-        <div [innerHTML]="selectedRecipe.summary"></div>
-        <!-- Add more details as needed -->
+            <img [src]="selectedRecipe.image" alt="{{ selectedRecipe.title }}" width="100%" />
+            <!-- Number Box for Servings -->
+            <dx-number-box
+                [(value)]="numberOfServings"
+                [min]="1"
+                [showSpinButtons]="true"
+                [width]="100"
+                label="Servings"
+            ></dx-number-box>
+    
+            <!-- Collapsible Summary -->
+            <div dx-accordion>
+            <dxi-item title="Summary">
+                <div [innerHTML]="selectedRecipe.summary"></div>
+            </dxi-item>
+            </div>
+        
+            <!-- Start Planning Button -->
+            <dx-button
+            text="Start Planning"
+            stylingMode="contained"
+            type="default"
+            (onClick)="startPlanning()"
+            ></dx-button>
         </div>
     </dx-popup>
 </div>
