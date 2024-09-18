@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import notify from 'devextreme/ui/notify';
-import { EDAMAM_APP_ID, EDAMAM_APP_KEY, EDAMAM_RECIPE_SEARCH_URL, SPOONACULAR_API_KEY } from '../../../api-creds'
+import { SPOONACULAR_API_KEY, SPOONACULAR_RECIPES_URL } from '../../../api-creds'
 
 @Component({
   selector: 'app-recipes',
@@ -28,7 +28,7 @@ export class RecipesComponent implements OnInit {
     await this.fetchRecommendedRecipes();
     // Set up debouncing for meal suggestions input
     this.searchSubject.pipe(
-      debounceTime(500), // Wait for 500ms after the user stops typing
+      debounceTime(250), // Wait for 250ms after the user stops typing
       distinctUntilChanged() // Only emit if the query has changed
     ).subscribe((query) => {
       this.fetchMealSuggestions(query);
@@ -52,7 +52,7 @@ export class RecipesComponent implements OnInit {
       // Get the list of ingredients from the stock
       const ingredients = stockItems.map((item) => item.item).join(',');
   
-      const url = `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(
+      const url = `${SPOONACULAR_RECIPES_URL}/findByIngredients?ingredients=${encodeURIComponent(
         ingredients
       )}&number=5&ranking=1&apiKey=${SPOONACULAR_API_KEY}`;
   
@@ -101,7 +101,7 @@ export class RecipesComponent implements OnInit {
   }
 
   fetchMealSuggestions(query: string): void {
-    const url = `https://api.spoonacular.com/recipes/autocomplete?query=${encodeURIComponent(
+    const url = `${SPOONACULAR_RECIPES_URL}/autocomplete?query=${encodeURIComponent(
       query
     )}&number=5&apiKey=${SPOONACULAR_API_KEY}&metaInformation=true`;
   
@@ -147,7 +147,7 @@ export class RecipesComponent implements OnInit {
   }
 
   fetchRecipeDetails(recipeId: number): void {
-    const url = `https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=false&apiKey=${SPOONACULAR_API_KEY}`;
+    const url = `${SPOONACULAR_RECIPES_URL}/${recipeId}/information?includeNutrition=false&apiKey=${SPOONACULAR_API_KEY}`;
   
     this.http.get(url).subscribe(
       (data: any) => {

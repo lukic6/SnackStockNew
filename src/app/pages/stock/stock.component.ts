@@ -4,6 +4,8 @@ import { SPOONACULAR_API_KEY, SPOONACULAR_AUTOCOMPLETE_URL } from '../../../api-
 import { StockItem } from '../../../app-interfaces';
 import notify from 'devextreme/ui/notify';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-stock',
@@ -16,6 +18,7 @@ export class StockComponent implements OnInit {
   isEditMode: boolean = false;
   selectedItem: StockItem = { id: '', item: '', quantity: 0, measurement: '' };
   ingredientSuggestions: any[] = [];
+  searchSubject: Subject<string> = new Subject<string>();
 
   constructor(private supabaseService: SupabaseService, private http: HttpClient) {
     this.onSaveItem = this.onSaveItem.bind(this);
@@ -28,6 +31,12 @@ export class StockComponent implements OnInit {
       return;
     }
     this.stockItems = await this.fetchStock();
+    this.searchSubject.pipe(
+      debounceTime(250), // Wait 250ms after the last input
+      distinctUntilChanged() // Only trigger if the input value has changed
+    ).subscribe(query => {
+      this.fetchIngredientSuggestions(query); // Call the fetch function after debounce
+    });
   }
 
   async fetchStock(): Promise<StockItem[]> {
@@ -49,7 +58,7 @@ export class StockComponent implements OnInit {
   async onItemInput(event: any) {
     const query = event.component.option('text');
     if (query.length > 1) {
-      await this.fetchIngredientSuggestions(query);
+      this.searchSubject.next(query);
     }
   }
 
