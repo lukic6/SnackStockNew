@@ -141,8 +141,6 @@ export class RecipesComponent implements OnInit {
   onRecipeClick(event: any): void {
     const recipe = event.itemData;
     this.fetchRecipeDetails(recipe.id);
-    console.log('Selected Recipe:', recipe);
-    notify(`Selected Recipe: ${recipe.title}`, 'success', 2000);
   }
   onMealSuggestionClick(event: any): void {
     const recipe = event.itemData;

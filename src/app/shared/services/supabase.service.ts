@@ -24,7 +24,19 @@ export class SupabaseService {
       throw error;
     }
 
-    return data[0].id;
+    const householdId = data[0].id;
+
+    // Create a Stocks record for the new household
+    const { error: stocksError } = await this.supabase
+      .from('Stocks')
+      .insert({ householdId });
+
+    if (stocksError) {
+      console.error('Error creating Stocks record:', stocksError.message);
+      throw stocksError;
+    }
+
+    return householdId;
   }
 
   async registerUser(username: string, password: string): Promise<{ userId: string, username: string, householdId: string }> {
@@ -70,48 +82,109 @@ export class SupabaseService {
   /// AUTH endregion
   /// STOCK region
   async getStockItems(householdId: string | null): Promise<StockItem[]> {
-    const { data, error } = await this.supabase
+    const { data: stocksData, error: stocksError, status } = await this.supabase
       .from('Stocks')
-      .select('*')
-      .eq('householdId', householdId);
-
-    if (error) {
-      console.error('Error fetching stock items:', error.message);
-      throw error;
+      .select('id')
+      .eq('householdId', householdId)
+      .maybeSingle(); // Use maybeSingle to allow for no results
+  
+    if (stocksError && status !== 406) { // 406 Not Acceptable - no rows found
+      console.error('Error fetching Stocks record:', stocksError?.message);
+      throw stocksError;
     }
-
-    return data as StockItem[];
-  }
+    if (!stocksData) {
+      return [];
+    }
+    const stockId = stocksData.id;
+    const { data: stockItemsData, error: stockItemsError } = await this.supabase
+      .from('StockItems')
+      .select('id, item, quantity, unit')
+      .eq('stockId', stockId);
+  
+    if (stockItemsError) {
+      console.error('Error fetching stock items:', stockItemsError.message);
+      throw stockItemsError;
+    }
+  
+    return stockItemsData as StockItem[];
+  }  
 
   async addStockItem(stockItem: StockItem, householdId: string | null): Promise<StockItem> {
-    const { data, error } = await this.supabase
-      .from('Stocks')
-      .insert({
-        householdId,
-        item: stockItem.item,
-        quantity: stockItem.quantity,
-        unit: stockItem.unit
-      })
-      .select();
+    let { data: stocksData, error: stocksError, status } = await this.supabase
+    .from('Stocks')
+    .select('id')
+    .eq('householdId', householdId)
+    .maybeSingle();
 
-    if (error) {
-      console.error('Error adding stock item:', error.message);
-      throw error;
-    }
-
-    return data[0] as StockItem;
+  if (stocksError && status !== 406) {
+    console.error('Error fetching Stocks record:', stocksError?.message);
+    throw stocksError;
   }
 
-  async modifyStockItem(stockItem: StockItem, householdId: string | null): Promise<void> {
-    const { error } = await this.supabase
+  if (!stocksData) {
+    // No Stocks record exists, create one
+    const { data: newStocksData, error: newStocksError } = await this.supabase
       .from('Stocks')
+      .insert({ householdId })
+      .select();
+
+    if (newStocksError || !newStocksData) {
+      console.error('Error creating Stocks record:', newStocksError?.message);
+      throw newStocksError || new Error('Failed to create Stocks record.');
+    }
+
+    stocksData = newStocksData[0];
+  }
+
+  const stockId = stocksData?.id;
+
+  // Now insert into StockItems
+  const { data, error } = await this.supabase
+    .from('StockItems')
+    .insert({
+      stockId,
+      item: stockItem.item,
+      quantity: stockItem.quantity,
+      unit: stockItem.unit
+    })
+    .select();
+
+  if (error) {
+    console.error('Error adding stock item:', error.message);
+    throw error;
+  }
+
+  return data[0] as StockItem;
+}
+
+  async modifyStockItem(stockItem: StockItem, householdId: string | null): Promise<void> {
+    const { data: stocksData, error: stocksError, status } = await this.supabase
+      .from('Stocks')
+      .select('id')
+      .eq('householdId', householdId)
+      .maybeSingle();
+
+    if (stocksError && status !== 406) {
+      console.error('Error fetching Stocks record:', stocksError?.message);
+      throw stocksError;
+    }
+
+    if (!stocksData) {
+      throw new Error('Stocks record not found for this household.');
+    }
+
+    const stockId = stocksData.id;
+
+    // Update the StockItem
+    const { data, error } = await this.supabase
+      .from('StockItems')
       .update({
         item: stockItem.item,
         quantity: stockItem.quantity,
         unit: stockItem.unit
       })
       .eq('id', stockItem.id)
-      .eq('householdId', householdId);
+      .eq('stockId', stockId); // Ensure it belongs to the correct stock
 
     if (error) {
       console.error('Error modifying stock item:', error.message);
@@ -119,18 +192,37 @@ export class SupabaseService {
     }
   }
 
+
   async deleteStockItem(itemId: string, householdId: string | null): Promise<void> {
-    const { error } = await this.supabase
+    const { data: stocksData, error: stocksError, status } = await this.supabase
       .from('Stocks')
+      .select('id')
+      .eq('householdId', householdId)
+      .maybeSingle();
+  
+    if (stocksError && status !== 406) {
+      console.error('Error fetching Stocks record:', stocksError?.message);
+      throw stocksError;
+    }
+  
+    if (!stocksData) {
+      throw new Error('Stocks record not found for this household.');
+    }
+  
+    const stockId = stocksData.id;
+  
+    // Delete the StockItem
+    const { data, error } = await this.supabase
+      .from('StockItems')
       .delete()
       .eq('id', itemId)
-      .eq('householdId', householdId);
-
+      .eq('stockId', stockId); // Ensure it belongs to the correct stock
+  
     if (error) {
       console.error('Error deleting stock item:', error.message);
       throw error;
     }
-  }
+  }  
   /// STOCK endregion
   /// RECIPES region
   async addMeal(meal: any): Promise<any> {
@@ -244,47 +336,70 @@ export class SupabaseService {
           console.error('Error decrementing member count in previous household:', decrementError.message);
           throw new Error('Failed to update member count in previous household.');
         }
+
+        if (previousHouseholdMemberCount === 0) {
+          // Transfer Stocks and StockItems
+    
+          // Fetch the Stocks record associated with the old household
+          const { data: oldStockData, error: oldStockError } = await this.supabase
+            .from('Stocks')
+            .select('id')
+            .eq('householdId', householdId)
+            .single();
+    
+          if (oldStockError || !oldStockData) {
+            console.error('Error fetching old Stocks record:', oldStockError?.message);
+            // Proceed even if no Stocks record exists
+          } else {
+            const oldStockId = oldStockData.id;
+    
+            // Update the householdId of the Stocks record to the new householdId
+            const { error: updateStockError } = await this.supabase
+              .from('Stocks')
+              .update({ householdId: newHouseholdId })
+              .eq('id', oldStockId);
+    
+            if (updateStockError) {
+              console.error('Error updating Stocks record:', updateStockError.message);
+              throw new Error('Failed to update Stocks record.');
+            }
+          }
+    
+          // Transfer ShoppingLists and ShoppingListItems
+    
+          // Update the householdId in the ShoppingLists table
+          const { error: updateShoppingListsError } = await this.supabase
+            .from('ShoppingLists')
+            .update({ householdId: newHouseholdId })
+            .eq('householdId', householdId);
+    
+          if (updateShoppingListsError) {
+            console.error('Error updating household ID in ShoppingLists:', updateShoppingListsError.message);
+            throw new Error('Failed to update household ID in ShoppingLists.');
+          }
+    
+          // Transfer Meals and MealItems
+    
+          // Update the householdId in the Meals table
+          const { error: updateMealsError } = await this.supabase
+            .from('Meals')
+            .update({ householdId: newHouseholdId })
+            .eq('householdId', householdId);
+    
+          if (updateMealsError) {
+            console.error('Error updating household ID in Meals:', updateMealsError.message);
+            throw new Error('Failed to update household ID in Meals.');
+          }
+    
+          // Note: MealItems and ShoppingListItems remain associated via foreign keys to Meals and ShoppingLists
+        }
       }
-  
-      // Update household ID in the Stocks table
-      const { error: stockError } = await this.supabase
-        .from('Stocks')
-        .update({ householdId: newHouseholdId })
-        .eq('householdId', householdId);
-  
-      if (stockError) {
-        console.error('Error updating household ID in stocks:', stockError.message);
-        throw new Error('Failed to update household ID for stocks.');
-      }
-  
-      // Update household ID in the ShoppingLists table
-      const { error: shoppingListError } = await this.supabase
-        .from('ShoppingLists')
-        .update({ householdId: newHouseholdId })
-        .eq('householdId', householdId);
-  
-      if (shoppingListError) {
-        console.error('Error updating household ID in shopping lists:', shoppingListError.message);
-        throw new Error('Failed to update household ID for shopping lists.');
-      }
-  
-      // Update household ID in the Meals table
-      const { error: mealsError } = await this.supabase
-        .from('Meals')
-        .update({ householdId: newHouseholdId })
-        .eq('householdId', householdId);
-  
-      if (mealsError) {
-        console.error('Error updating household ID in meals:', mealsError.message);
-        throw new Error('Failed to update household ID for meals.');
-      }
-  
       // If all updates succeeded, return true
       return true;
     } catch (error) {
       console.error('Error updating household ID across tables:', error);
       return false;
     }
-  }  
+  } 
   /// OPTIONS endregion
 }
