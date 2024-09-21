@@ -506,5 +506,18 @@ export class SupabaseService {
     }
   }
   
+  async getHouseholdMembers(householdId: string): Promise<{ username: string }[]> {
+    const { data, error } = await this.supabase
+      .from('Users')
+      .select('username')
+      .eq('householdId', householdId);
+  
+    if (error) {
+      console.error('Error fetching household members:', error.message);
+      throw error;
+    }
+  
+    return data || [];
+  }
   /// OPTIONS endregion
 }

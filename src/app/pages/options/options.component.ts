@@ -12,6 +12,7 @@ export class OptionsComponent implements OnInit {
   username: string = "";
   householdId: string | null = "";
   newHouseholdId: string = "";
+  householdMembers: { username: string }[] = [];
 
   constructor(private supabaseService: SupabaseService) {}
 
@@ -31,6 +32,8 @@ export class OptionsComponent implements OnInit {
     clipboard.on('error', () => {
       console.error('Failed to copy Household ID');
     });
+
+    this.loadHouseholdMembers();
   }
 
   async onChangeUsername(): Promise<void> {
@@ -63,6 +66,7 @@ export class OptionsComponent implements OnInit {
         localStorage.setItem('householdId', this.newHouseholdId);
         this.householdId = this.newHouseholdId;
         notify('Household successfully changed!', 'success', 2000);
+        await this.loadHouseholdMembers();
       } else {
         notify('Invalid household ID. Please try again.', 'error', 2000);
       }
@@ -72,4 +76,19 @@ export class OptionsComponent implements OnInit {
     }
   }
   
+  async loadHouseholdMembers(): Promise<void> {
+    try {
+      if (!this.householdId) {
+        this.householdMembers = [];
+        return;
+      }
+
+      // Fetch household members from Supabase
+      const members = await this.supabaseService.getHouseholdMembers(this.householdId);
+      this.householdMembers = members || [];
+    } catch (error) {
+      console.error('Error loading household members:', error);
+      notify('Failed to load household members. Please try again.', 'error', 2000);
+    }
+  }
 }

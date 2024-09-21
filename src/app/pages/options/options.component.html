@@ -17,4 +17,16 @@
         <dx-text-box [(value)]="newHouseholdId" placeholder="Enter new household UUID"></dx-text-box>
         <dx-button text="Change Household" stylingMode="contained" type="default" (onClick)="onChangeHousehold()"></dx-button>
     </div>
+
+    <div *ngIf="householdMembers.length > 0">
+        <h3 class="page-header">Household Members</h3>
+        <ul>
+            <li *ngFor="let member of householdMembers">
+                {{ member.username }}
+            </li>
+        </ul>
+    </div>
+    <div *ngIf="householdMembers.length === 0">
+        <p>No members found in this household.</p>
+    </div>
 </div>
