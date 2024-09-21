@@ -185,10 +185,8 @@ export class RecipesComponent implements OnInit {
         servings: this.numberOfServings
       };
   
-      const { data: mealData, error: mealError } = await this.supabaseService.addMeal(meal);
-      if (mealError) throw mealError;
-  
-      const mealId = mealData[0].id;
+      const mealData = await this.supabaseService.addMeal(meal);
+      const mealId = mealData.id;
   
       // 2. Get Ingredients and Calculate Quantities
       const ingredients = this.selectedRecipe.extendedIngredients.map((ingredient: any) => {

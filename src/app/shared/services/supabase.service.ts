@@ -225,32 +225,75 @@ export class SupabaseService {
   }  
   /// STOCK endregion
   /// RECIPES region
-  async addMeal(meal: any): Promise<any> {
+  async addMeal(meal: { householdId: string; mealName: string; servings: number }): Promise<{ id: string }> {
     const { data, error } = await this.supabase
-      .from('Meals')
-      .insert([meal])
-      .select();
-  
-    return { data, error };
+    .from('Meals')
+    .insert(meal)
+    .select();
+
+    if (error) {
+      console.error('Error adding meal:', error.message);
+      throw error;
+    }
+
+    return data[0];
   }
 
-  async addMealItem(mealItem: MealItem): Promise<any> {
-    const { data, error } = await this.supabase
+  async addMealItem(mealItem: { mealId: string; item: string; quantity: number; unit: string }): Promise<void> {
+    const { error } = await this.supabase
       .from('MealItems')
-      .insert([mealItem]);
+      .insert(mealItem);
   
-    return { data, error };
+    if (error) {
+      console.error('Error adding meal item:', error.message);
+      throw error;
+    }
   }
 
   async addShoppingListItem(shoppingItem: { householdId: string; item: string; quantity: number; unit: string; active: boolean }): Promise<void> {
-    const { data, error } = await this.supabase
+    // First, get or create the ShoppingList for the household
+    let { data: shoppingListData, error: shoppingListError, status } = await this.supabase
       .from('ShoppingLists')
-      .insert([shoppingItem]);
+      .select('id')
+      .eq('householdId', shoppingItem.householdId)
+      .maybeSingle();
   
-      if (error) {
-        console.error('Error adding item to shopping list:', error.message);
-        throw error;
+    if (shoppingListError && status !== 406) {
+      console.error('Error fetching ShoppingList:', shoppingListError.message);
+      throw shoppingListError;
+    }
+  
+    if (!shoppingListData) {
+      // No ShoppingList exists for the household, create one
+      const { data: newShoppingListData, error: newShoppingListError } = await this.supabase
+        .from('ShoppingLists')
+        .insert({ householdId: shoppingItem.householdId })
+        .select();
+  
+      if (newShoppingListError || !newShoppingListData) {
+        console.error('Error creating ShoppingList:', newShoppingListError?.message);
+        throw newShoppingListError || new Error('Failed to create ShoppingList.');
       }
+  
+      shoppingListData = newShoppingListData[0];
+    }
+  
+    const shoppingListId = shoppingListData?.id;
+  
+    // Now insert into ShoppingListItems
+    const { error } = await this.supabase
+      .from('ShoppingListItems')
+      .insert({
+        shoppingListId,
+        item: shoppingItem.item,
+        quantity: shoppingItem.quantity,
+        unit: shoppingItem.unit
+      });
+  
+    if (error) {
+      console.error('Error adding item to shopping list:', error.message);
+      throw error;
+    }
   }
   /// RECIPES endregion
   /// OPTIONS region
