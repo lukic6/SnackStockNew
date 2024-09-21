@@ -68,14 +68,22 @@
                 <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
             </dxi-item>
             <dxi-item dataField="unit" label="Unit">
-                <dx-select-box
-                    [(value)]="selectedItem.unit"
-                    [dataSource]="ingredientUnits"
-                    [disabled]="isEditMode"
-                    placeholder="Select a unit"
-                >
-                </dx-select-box>
-                <dxi-validation-rule type="required" message="Unit is required"></dxi-validation-rule>
+                <ng-container *ngIf="!isEditMode">
+                    <dx-select-box
+                        [(value)]="selectedItem.unit"
+                        [dataSource]="ingredientUnits"
+                        [disabled]="ingredientUnits.length == 0"
+                        placeholder="Select a unit"
+                    >
+                    </dx-select-box>
+                </ng-container>
+                <ng-container *ngIf="isEditMode">
+                    <dx-text-box
+                        [(value)]="selectedItem.unit"
+                        [disabled]="true"
+                        placeholder="Unit">
+                    </dx-text-box>
+                </ng-container>
             </dxi-item>
 
             <!-- Save Button -->
