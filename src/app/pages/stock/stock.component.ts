@@ -81,7 +81,6 @@ export class StockComponent implements OnInit {
   }
 
   onItemSelected(event: any) {
-    console.log(event);
     const selectedItemName = event.value;
     const selectedIngredient = this.ingredientSuggestions.find((ingredient: any) => ingredient.name === selectedItemName);
     if (selectedIngredient) {

@@ -276,14 +276,14 @@ export class SupabaseService {
 
   async verifyHousehold(householdId: string | null, newHouseholdId: string): Promise<boolean> {
     // Verify if the new household ID exists
-    const { data: householdData, error: householdError } = await this.supabase
+    const { data: newHouseholdData, error: newHouseholdError } = await this.supabase
       .from('Households')
       .select('id, member')
       .eq('id', newHouseholdId)
       .single();
   
-    if (householdError || !householdData) {
-      console.error('Error verifying household:', householdError?.message);
+    if (newHouseholdError || !newHouseholdData) {
+      console.error('Error verifying new household:', newHouseholdError?.message);
       return false;
     }
   
@@ -302,7 +302,7 @@ export class SupabaseService {
       }
   
       // Increment the member count of the new household
-      const newHouseholdMemberCount = householdData.member + 1;
+      const newHouseholdMemberCount = newHouseholdData.member + 1;
       const { error: incrementError } = await this.supabase
         .from('Households')
         .update({ member: newHouseholdMemberCount })
@@ -316,90 +316,195 @@ export class SupabaseService {
       // Decrement the member count of the previous household
       if (householdId) {
         const { data: previousHouseholdData, error: previousHouseholdError } = await this.supabase
-        .from('Households')
-        .select('member')
-        .eq('id', householdId)
-        .single();
-
+          .from('Households')
+          .select('member')
+          .eq('id', householdId)
+          .single();
+  
         if (previousHouseholdError) {
           console.error('Error retrieving previous household data:', previousHouseholdError.message);
           throw new Error('Failed to retrieve previous household data.');
         }
-
+  
         const previousHouseholdMemberCount = previousHouseholdData.member - 1;
         const { error: decrementError } = await this.supabase
           .from('Households')
           .update({ member: previousHouseholdMemberCount })
           .eq('id', householdId);
-    
+  
         if (decrementError) {
           console.error('Error decrementing member count in previous household:', decrementError.message);
           throw new Error('Failed to update member count in previous household.');
         }
-
+  
         if (previousHouseholdMemberCount === 0) {
-          // Transfer Stocks and StockItems
-    
-          // Fetch the Stocks record associated with the old household
-          const { data: oldStockData, error: oldStockError } = await this.supabase
-            .from('Stocks')
-            .select('id')
-            .eq('householdId', householdId)
-            .single();
-    
-          if (oldStockError || !oldStockData) {
-            console.error('Error fetching old Stocks record:', oldStockError?.message);
-            // Proceed even if no Stocks record exists
-          } else {
-            const oldStockId = oldStockData.id;
-    
-            // Update the householdId of the Stocks record to the new householdId
-            const { error: updateStockError } = await this.supabase
-              .from('Stocks')
-              .update({ householdId: newHouseholdId })
-              .eq('id', oldStockId);
-    
-            if (updateStockError) {
-              console.error('Error updating Stocks record:', updateStockError.message);
-              throw new Error('Failed to update Stocks record.');
-            }
-          }
-    
-          // Transfer ShoppingLists and ShoppingListItems
-    
-          // Update the householdId in the ShoppingLists table
-          const { error: updateShoppingListsError } = await this.supabase
-            .from('ShoppingLists')
-            .update({ householdId: newHouseholdId })
-            .eq('householdId', householdId);
-    
-          if (updateShoppingListsError) {
-            console.error('Error updating household ID in ShoppingLists:', updateShoppingListsError.message);
-            throw new Error('Failed to update household ID in ShoppingLists.');
-          }
-    
-          // Transfer Meals and MealItems
-    
-          // Update the householdId in the Meals table
-          const { error: updateMealsError } = await this.supabase
-            .from('Meals')
-            .update({ householdId: newHouseholdId })
-            .eq('householdId', householdId);
-    
-          if (updateMealsError) {
-            console.error('Error updating household ID in Meals:', updateMealsError.message);
-            throw new Error('Failed to update household ID in Meals.');
-          }
-    
-          // Note: MealItems and ShoppingListItems remain associated via foreign keys to Meals and ShoppingLists
+          // Transfer data from old household to new household
+  
+          // **Transfer Stocks and StockItems**
+          await this.transferStocks(householdId, newHouseholdId);
+  
+          // **Transfer ShoppingLists and ShoppingListItems**
+          await this.transferShoppingLists(householdId, newHouseholdId);
+  
+          // **Transfer Meals and MealItems**
+          await this.transferMeals(householdId, newHouseholdId);
+  
+          // **Delete the old household record if necessary**
+          // (Optional) You can decide to delete the old household record since it has no members
         }
       }
+  
       // If all updates succeeded, return true
       return true;
     } catch (error) {
       console.error('Error updating household ID across tables:', error);
       return false;
     }
-  } 
+  }
+  
+  private async transferStocks(oldHouseholdId: string, newHouseholdId: string): Promise<void> {
+    // Fetch the Stocks record associated with the old household
+    const { data: oldStockData, error: oldStockError } = await this.supabase
+      .from('Stocks')
+      .select('id')
+      .eq('householdId', oldHouseholdId)
+      .single();
+  
+    if (oldStockError || !oldStockData) {
+      console.error('Error fetching old Stocks record:', oldStockError?.message);
+      // Proceed even if no Stocks record exists
+      return;
+    }
+  
+    const oldStockId = oldStockData.id;
+  
+    // Check if the new household already has a Stocks record
+    const { data: newStocksData, error: newStocksError } = await this.supabase
+      .from('Stocks')
+      .select('id')
+      .eq('householdId', newHouseholdId)
+      .maybeSingle();
+  
+    if (newStocksError && newStocksError.code !== 'PGRST116') {
+      console.error('Error checking Stocks record for new household:', newStocksError.message);
+      throw new Error('Failed to check Stocks record for new household.');
+    }
+  
+    if (newStocksData) {
+      // **New household already has a Stocks record**
+      const newStockId = newStocksData.id;
+  
+      // **Transfer StockItems from old to new Stocks record**
+      const { error: updateStockItemsError } = await this.supabase
+        .from('StockItems')
+        .update({ stockId: newStockId })
+        .eq('stockId', oldStockId);
+  
+      if (updateStockItemsError) {
+        console.error('Error transferring StockItems:', updateStockItemsError.message);
+        throw new Error('Failed to transfer StockItems.');
+      }
+  
+      // **Delete the old Stocks record**
+      const { error: deleteOldStocksError } = await this.supabase
+        .from('Stocks')
+        .delete()
+        .eq('id', oldStockId);
+  
+      if (deleteOldStocksError) {
+        console.error('Error deleting old Stocks record:', deleteOldStocksError.message);
+        throw new Error('Failed to delete old Stocks record.');
+      }
+    } else {
+      // **New household does not have a Stocks record**
+      // Update the householdId of the old Stocks record to the newHouseholdId
+      const { error: updateStockError } = await this.supabase
+        .from('Stocks')
+        .update({ householdId: newHouseholdId })
+        .eq('id', oldStockId);
+  
+      if (updateStockError) {
+        console.error('Error updating Stocks record:', updateStockError.message);
+        throw new Error('Failed to update Stocks record.');
+      }
+    }
+  }
+
+  private async transferShoppingLists(oldHouseholdId: string, newHouseholdId: string): Promise<void> {
+    // Check if the new household already has ShoppingLists
+    const { data: existingShoppingLists, error: shoppingListsError } = await this.supabase
+      .from('ShoppingLists')
+      .select('id')
+      .eq('householdId', newHouseholdId);
+  
+    if (shoppingListsError) {
+      console.error('Error checking ShoppingLists for new household:', shoppingListsError.message);
+      throw new Error('Failed to check ShoppingLists for new household.');
+    }
+  
+    if (existingShoppingLists && existingShoppingLists.length > 0) {
+      // **Handle merging or decide not to transfer**
+      // For simplicity, let's update the householdId of old ShoppingLists if there are no conflicts
+      const { error: updateShoppingListsError } = await this.supabase
+        .from('ShoppingLists')
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', oldHouseholdId);
+  
+      if (updateShoppingListsError) {
+        console.error('Error updating ShoppingLists:', updateShoppingListsError.message);
+        throw new Error('Failed to update ShoppingLists.');
+      }
+    } else {
+      // **No existing ShoppingLists in new household, safe to transfer**
+      const { error: updateShoppingListsError } = await this.supabase
+        .from('ShoppingLists')
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', oldHouseholdId);
+  
+      if (updateShoppingListsError) {
+        console.error('Error updating ShoppingLists:', updateShoppingListsError.message);
+        throw new Error('Failed to update ShoppingLists.');
+      }
+    }
+  }
+  
+  private async transferMeals(oldHouseholdId: string, newHouseholdId: string): Promise<void> {
+    // Check if the new household already has Meals
+    const { data: existingMeals, error: mealsError } = await this.supabase
+      .from('Meals')
+      .select('id')
+      .eq('householdId', newHouseholdId);
+  
+    if (mealsError) {
+      console.error('Error checking Meals for new household:', mealsError.message);
+      throw new Error('Failed to check Meals for new household.');
+    }
+  
+    if (existingMeals && existingMeals.length > 0) {
+      // **Handle merging or decide not to transfer**
+      // For simplicity, let's update the householdId of old Meals if there are no conflicts
+      const { error: updateMealsError } = await this.supabase
+        .from('Meals')
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', oldHouseholdId);
+  
+      if (updateMealsError) {
+        console.error('Error updating Meals:', updateMealsError.message);
+        throw new Error('Failed to update Meals.');
+      }
+    } else {
+      // **No existing Meals in new household, safe to transfer**
+      const { error: updateMealsError } = await this.supabase
+        .from('Meals')
+        .update({ householdId: newHouseholdId })
+        .eq('householdId', oldHouseholdId);
+  
+      if (updateMealsError) {
+        console.error('Error updating Meals:', updateMealsError.message);
+        throw new Error('Failed to update Meals.');
+      }
+    }
+  }
+  
   /// OPTIONS endregion
 }
