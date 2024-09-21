@@ -186,7 +186,7 @@ export class SupabaseService {
     // Verify if the new household ID exists
     const { data: householdData, error: householdError } = await this.supabase
       .from('Households')
-      .select('id')
+      .select('id, member')
       .eq('id', newHouseholdId)
       .single();
   
@@ -210,9 +210,10 @@ export class SupabaseService {
       }
   
       // Increment the member count of the new household
+      const newHouseholdMemberCount = householdData.member + 1;
       const { error: incrementError } = await this.supabase
         .from('Households')
-        .update({ member: this.supabase.rpc('increment_member', { household_id: newHouseholdId }) })
+        .update({ member: newHouseholdMemberCount })
         .eq('id', newHouseholdId);
   
       if (incrementError) {
@@ -222,11 +223,23 @@ export class SupabaseService {
   
       // Decrement the member count of the previous household
       if (householdId) {
+        const { data: previousHouseholdData, error: previousHouseholdError } = await this.supabase
+        .from('Households')
+        .select('member')
+        .eq('id', householdId)
+        .single();
+
+        if (previousHouseholdError) {
+          console.error('Error retrieving previous household data:', previousHouseholdError.message);
+          throw new Error('Failed to retrieve previous household data.');
+        }
+
+        const previousHouseholdMemberCount = previousHouseholdData.member - 1;
         const { error: decrementError } = await this.supabase
           .from('Households')
-          .update({ member: this.supabase.rpc('decrement_member', { household_id: householdId }) })
+          .update({ member: previousHouseholdMemberCount })
           .eq('id', householdId);
-  
+    
         if (decrementError) {
           console.error('Error decrementing member count in previous household:', decrementError.message);
           throw new Error('Failed to update member count in previous household.');

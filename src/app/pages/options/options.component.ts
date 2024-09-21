@@ -24,6 +24,7 @@ export class OptionsComponent implements OnInit {
     });
 
     clipboard.on('success', () => {
+      notify('Household ID copied to clipboard!', "success", 2000);
       console.log('Household ID copied to clipboard');
     });
 
