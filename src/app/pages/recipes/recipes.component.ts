@@ -182,7 +182,8 @@ export class RecipesComponent implements OnInit {
       const meal = {
         householdId,
         mealName: this.selectedRecipe.title,
-        servings: this.numberOfServings
+        servings: this.numberOfServings,
+        instructions: this.selectedRecipe.instructions
       };
   
       const mealData = await this.supabaseService.addMeal(meal);
@@ -226,12 +227,18 @@ export class RecipesComponent implements OnInit {
         if (stockItem.quantity >= ingredient.quantity) {
           // Sufficient stock, deduct quantity
           stockItem.quantity -= ingredient.quantity;
-          await this.supabaseService.modifyStockItem(stockItem, householdId);
+          if (stockItem.quantity === 0) {
+            // If quantity becomes 0, remove the stock item
+            await this.supabaseService.deleteStockItem(stockItem.id, householdId);
+          } else {
+            // Update the stock item with the new quantity
+            await this.supabaseService.modifyStockItem(stockItem, householdId);
+          }
         } else {
           // Insufficient stock, deduct available quantity and add the rest to shopping list
           const missingQuantity = ingredient.quantity - stockItem.quantity;
           stockItem.quantity = 0;
-          await this.supabaseService.modifyStockItem(stockItem, householdId);
+          await this.supabaseService.deleteStockItem(stockItem.id, householdId);
   
           // Add missing quantity to shopping list
           await this.supabaseService.addShoppingListItem({

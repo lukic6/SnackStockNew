@@ -225,7 +225,7 @@ export class SupabaseService {
   }  
   /// STOCK endregion
   /// RECIPES region
-  async addMeal(meal: { householdId: string; mealName: string; servings: number }): Promise<{ id: string }> {
+  async addMeal(meal: { householdId: string; mealName: string; servings: number; instructions: string }): Promise<{ id: string }> {
     const { data, error } = await this.supabase
     .from('Meals')
     .insert(meal)
