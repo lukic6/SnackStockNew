@@ -1,14 +1,13 @@
-.recipes-container {
-    padding: 20px;
-}
-
-.section-header {
-    margin-bottom: 10px;
-}
-
 .recipe-item {
-    padding: 10px;
     border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    height: 75px;
+}
+
+::ng-deep .dx-list .dx-empty-message, .dx-list-item-content {
+    padding: 0px 12px;
 }
 
 .recipe-item h4 {
@@ -21,11 +20,28 @@
     font-size: 14px;
 }
 
+.recipe-item-ingredients {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.recipe-item-ingredients p:first-of-type span {
+    color: #008000;
+}
+
 .other-meals-button {
     margin-top: 20px;
     text-align: center;
 }
 
 .popup-content {
-    padding: 20px;
-}  
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.img-number-box-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}

@@ -1,19 +1,29 @@
 <div class="recipes-container">
     <!-- Recommended Recipes Section -->
     <div *ngIf="recommendedRecipes && recommendedRecipes.length > 0">
-        <h3 class="section-header">Recommended Recipes</h3>
+        <h3 class="page-header">Recommended Recipes</h3>
         <dx-list
         [dataSource]="recommendedRecipes"
-        [height]="400"
+        [height]="'auto'"
         [showSelectionControls]="false"
         (onItemClick)="onRecipeClick($event)"
         >
         <div *dxTemplate="let item of 'item'">
             <div class="recipe-item">
-            <h4>{{ item.title }}</h4>
-            <img [src]="item.image" alt="{{ item.title }}" width="100" />
-            <p>Used Ingredients: {{ item.usedIngredientCount }}</p>
-            <p>Missing Ingredients: {{ item.missedIngredientCount }}</p>
+                <h4>{{ item.title }}</h4>
+                <img [src]="item.image" alt="{{ item.title }}" width="100" />
+                <div class="recipe-item-ingredients">
+                    <p>Used Ingredients: 
+                        <span *ngFor="let ingredient of item.usedIngredients; let isLast = last">
+                        {{ ingredient.name }}{{ isLast ? '' : ', ' }}
+                        </span>
+                    </p>
+                    <p>Missing Ingredients: 
+                        <span *ngFor="let ingredient of item.missedIngredients; let isLast = last">
+                        {{ ingredient.name }}{{ isLast ? '' : ', ' }}
+                        </span>
+                    </p>
+                </div>
             </div>
         </div>
         </dx-list>
@@ -75,7 +85,8 @@
     <dx-popup
         [visible]="selectedRecipe != null"
         [showCloseButton]="true"
-        [width]="600"
+        [maxWidth]="600"
+        [width]="'90%'"
         [height]="'auto'"
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
@@ -83,20 +94,22 @@
         title="{{ selectedRecipe?.title }}"
     >
         <div class="popup-content" *ngIf="selectedRecipe">
-            <img [src]="selectedRecipe.image" alt="{{ selectedRecipe.title }}" width="100%" />
-            <!-- Number Box for Servings -->
-            <dx-number-box
-                [(value)]="numberOfServings"
-                [min]="1"
-                [showSpinButtons]="true"
-                [width]="100"
-                label="Servings"
-            ></dx-number-box>
+            <div class="img-number-box-container">
+                <img [src]="selectedRecipe.image" alt="{{ selectedRecipe.title }}" width="40%" />
+                <!-- Number Box for Servings -->
+                <dx-number-box
+                    [(value)]="numberOfServings"
+                    [min]="1"
+                    [showSpinButtons]="true"
+                    [width]="100"
+                    label="Servings"
+                ></dx-number-box>
+            </div>
     
-            <!-- Collapsible Summary -->
+            <!-- Collapsible instructions -->
             <div dx-accordion>
-            <dxi-item title="Summary">
-                <div [innerHTML]="selectedRecipe.summary"></div>
+            <dxi-item title="Instructions">
+                <div [innerHTML]="selectedRecipe.instructions"></div>
             </dxi-item>
             </div>
         
