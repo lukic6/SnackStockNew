@@ -1,21 +1,109 @@
 <div class="shopping-list-container">
-    <!-- Active Shopping List Section -->
-    <h3 class="page-header">Active Shopping List</h3>
-    <dx-list
-        [dataSource]="activeShoppingItems"
-        [height]="'auto'"
-        [showSelectionControls]="false"
-        [displayExpr]="'item'"
-        [keyExpr]="'id'"
-        [allowItemDeleting]="true"
-        (onItemDeleted)="onItemDeleted($event)"
-    >
-      <div *dxTemplate="let item of 'item'">
-        <div class="shopping-list-item">
-            <p>{{ item.item }} ({{ item.quantity }} {{ item.unit }})</p>
-        </div>
+    <!-- Header with title and Add button -->
+    <div class="shopping-list-header">
+        <h3 class="page-header">Shopping List</h3>
+        <dx-button
+            icon="plus"
+            text="Add Item"
+            stylingMode="contained"
+            type="default"
+            (onClick)="onAddItemClick()"
+        ></dx-button>
+        <dx-button
+            text="Shopping Bought"
+            stylingMode="contained"
+            type="success"
+            (onClick)="onShoppingBoughtClick()"
+            [disabled]="!activeShoppingItems.length"
+        ></dx-button>
     </div>
-    </dx-list>
+
+    <!-- DataGrid for active shopping list items -->
+    <dx-data-grid
+        [dataSource]="activeShoppingItems"
+        [showBorders]="true"
+        height="100%"
+        (onRowRemoving)="onRowRemoving($event)"
+        (onEditingStart)="onEditingStart($event)"
+        >
+        <dxo-editing
+        mode="popup"
+        [allowUpdating]="true"
+        [allowDeleting]="true"
+        [confirmDelete]="false"
+        >
+        </dxo-editing>
+        <dxi-column caption="Item" [calculateCellValue]="item_quantity_unit"></dxi-column>
+    </dx-data-grid>
+
+    <!-- Popup for adding/editing items -->
+    <dx-popup
+        [visible]="popupVisible"
+        [showCloseButton]="true"
+        [width]="'90%'"
+        [maxWidth]="420"
+        [height]="'auto'"
+        [dragEnabled]="false"
+        [hideOnOutsideClick]="true"
+        (onHiding)="onPopupClose()"
+        title="Add/Edit Item"
+        >
+        <dx-form [formData]="selectedItem">
+            <dxi-item dataField="item" label="Item">
+                <dx-autocomplete
+                    [(value)]="selectedItem.item"
+                    [dataSource]="ingredientSuggestions"
+                    [minSearchLength]="2"
+                    [searchTimeout]="500"
+                    valueExpr="name"
+                    displayExpr="name"
+                    (onValueChanged)="onItemSelected($event)"
+                    (onInput)="onItemInput($event)"
+                    (onFocusOut)="onItemFocusOut($event)"
+                    [disabled]="isEditMode"
+                >
+                </dx-autocomplete>
+                <dxi-validation-rule type="required" message="Item is required"></dxi-validation-rule>
+            </dxi-item>
+            <dxi-item dataField="quantity" label="Quantity" editorType="dxNumberBox" [editorOptions]="{
+                value: 0,
+                format: 'decimal',
+                onFocusIn: handleFocusIn,
+                onFocusOut: handleFocusOut,
+                onKeyDown: handleKeyDown
+            }">
+            <dxi-validation-rule type="required" message="Quantity is required"></dxi-validation-rule>
+            </dxi-item>
+            <dxi-item dataField="unit" label="Unit">
+            <ng-container *ngIf="!isEditMode">
+                <dx-select-box
+                    [(value)]="selectedItem.unit"
+                    [dataSource]="ingredientUnits"
+                    [disabled]="ingredientUnits.length == 0"
+                    placeholder="Select a unit"
+                >
+                </dx-select-box>
+            </ng-container>
+            <ng-container *ngIf="isEditMode">
+                <dx-text-box
+                    [(value)]="selectedItem.unit"
+                    [disabled]="true"
+                    placeholder="Unit">
+                </dx-text-box>
+            </ng-container>
+            </dxi-item>
+    
+            <!-- Save Button -->
+            <dxi-item itemType="button">
+            <dxo-button-options
+                text="Save"
+                type="default"
+                stylingMode="contained"
+                [onClick]="onSaveItem"
+            ></dxo-button-options>
+            </dxi-item>
+        </dx-form>
+    </dx-popup>
 
     <!-- Section for Inactive Shopping Lists -->
     <h3 class="page-header">Past Shopping Lists</h3>
@@ -31,28 +119,28 @@
 
     <!-- Popup for Viewing Inactive Shopping Lists -->
     <dx-popup
-        [visible]="popupVisible"
+        [visible]="archivePopupVisible"
         [showCloseButton]="true"
         [width]="600"
         [height]="'auto'"
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
-        (onHiding)="popupVisible = false"
+        (onHiding)="archivePopupVisible = false"
         title="Shopping List {{ selectedShoppingList?.id }}"
     >
         <div *ngIf="selectedShoppingListItems && selectedShoppingListItems.length > 0">
             <dx-list
-                [dataSource]="selectedShoppingListItems"
-                [height]="400"
-                [showSelectionControls]="false"
-                [displayExpr]="'item'"
+            [dataSource]="selectedShoppingListItems"
+            [height]="400"
+            [showSelectionControls]="false"
+            [displayExpr]="'item'"
             >
-            <div *dxTemplate="let item of 'item'">
+                <div *dxTemplate="let item of 'item'">
                     <div class="shopping-list-item">
-                        <p>{{ item.item }} ({{ item.quantity }} {{ item.unit }})</p>
+                    <p>{{ item.item }} ({{ item.quantity }} {{ item.unit }})</p>
                     </div>
                 </div>
             </dx-list>
         </div>
     </dx-popup>
-</div>  
+</div>

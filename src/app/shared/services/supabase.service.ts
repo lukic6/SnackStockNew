@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { supabaseKey, supabaseUrl } from '../../../supabase-creds';
-import { StockItem, MealItem } from '../../../app-interfaces';
+import { StockItem, ShoppingListItem } from '../../../app-interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -250,97 +250,144 @@ export class SupabaseService {
     }
   }
 
-  async addShoppingListItem(shoppingItem: { householdId: string; item: string; quantity: number; unit: string; active: boolean }): Promise<void> {
-    // First, get or create the ShoppingList for the household
-    let { data: shoppingListData, error: shoppingListError, status } = await this.supabase
-      .from('ShoppingLists')
-      .select('id')
-      .eq('householdId', shoppingItem.householdId)
-      .maybeSingle();
-  
-    if (shoppingListError && status !== 406) {
-      console.error('Error fetching ShoppingList:', shoppingListError.message);
-      throw shoppingListError;
-    }
-  
-    if (!shoppingListData) {
-      // No ShoppingList exists for the household, create one
-      const { data: newShoppingListData, error: newShoppingListError } = await this.supabase
-        .from('ShoppingLists')
-        .insert({ householdId: shoppingItem.householdId })
-        .select();
-  
-      if (newShoppingListError || !newShoppingListData) {
-        console.error('Error creating ShoppingList:', newShoppingListError?.message);
-        throw newShoppingListError || new Error('Failed to create ShoppingList.');
-      }
-  
-      shoppingListData = newShoppingListData[0];
-    }
-  
-    const shoppingListId = shoppingListData?.id;
-  
-    // Now insert into ShoppingListItems
+  async addShoppingListItems(item: ShoppingListItem): Promise<void> {
     const { error } = await this.supabase
-      .from('ShoppingListItems')
-      .insert({
-        shoppingListId,
-        item: shoppingItem.item,
-        quantity: shoppingItem.quantity,
-        unit: shoppingItem.unit
-      });
+    .from('ShoppingListItems')
+    .insert({
+      shoppingListId: item.shoppingListId,
+      item: item.item,
+      quantity: item.quantity,
+      unit: item.unit,
+    });
+
+  if (error) {
+    console.error('Error adding shopping list item:', error.message);
+    throw error;
+  }
+}
+
+  async archiveShoppingList(shoppingListId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('ShoppingLists')
+      .update({ active: false })
+      .eq('id', shoppingListId);
   
     if (error) {
-      console.error('Error adding item to shopping list:', error.message);
+      console.error('Error archiving shopping list:', error.message);
       throw error;
     }
   }
+  
+  async createShoppingList(householdId: string): Promise<string> {
+    const { data, error } = await this.supabase
+      .from('ShoppingLists')
+      .insert({ householdId, active: true })
+      .select('id')
+      .single();
+  
+    if (error) {
+      console.error('Error creating new shopping list:', error.message);
+      throw error;
+    }
+  
+    return data.id;
+  }  
   /// RECIPES endregion
   /// SHOPPING-LIST region
-  async getShoppingLists(householdId: string): Promise<{ activeItems: any[], inactiveLists: any[] }> {
-    // Fetch active shopping list items
-    const { data: activeListIds, error: activeListIdsError } = await this.supabase
+  async getShoppingLists(householdId: string): Promise<{ activeItems: any[], inactiveLists: any[], activeShoppingListId: string }> {
+    // Fetch active shopping list
+    const { data: activeLists, error: activeListsError } = await this.supabase
       .from('ShoppingLists')
       .select('id')
       .eq('householdId', householdId)
       .eq('active', true);
-
-    if (activeListIdsError) {
-      console.error('Error fetching active shopping list IDs:', activeListIdsError);
-      throw activeListIdsError;
+  
+    if (activeListsError) {
+      console.error('Error fetching active shopping list IDs:', activeListsError);
+      throw activeListsError;
     }
-
-    const activeShoppingListIds = activeListIds.map((list: any) => list.id);
-
-    // Step 2: Fetch the active shopping list items
+  
+    let activeShoppingListId: string = '';
     let activeItems: any[] = [];
-    if (activeShoppingListIds.length > 0) {
+  
+    if (activeLists && activeLists.length > 0) {
+      activeShoppingListId = activeLists[0].id;
+  
+      // Fetch active shopping list items
       const { data: activeItemsData, error: activeItemsError } = await this.supabase
         .from('ShoppingListItems')
         .select('id, item, quantity, unit, shoppingListId')
-        .in('shoppingListId', activeShoppingListIds);  // Use the fetched active list IDs here
-
+        .eq('shoppingListId', activeShoppingListId);
+  
       if (activeItemsError) {
         console.error('Error fetching active shopping items:', activeItemsError);
         throw activeItemsError;
       }
-
+  
       activeItems = activeItemsData;
     }
   
-    // Step 3: Fetch inactive shopping lists and their items
+    // Fetch inactive shopping lists and their items
     const { data: inactiveLists, error: inactiveListsError } = await this.supabase
       .from('ShoppingLists')
       .select('id, ShoppingListItems(id, item, quantity, unit)')
       .eq('householdId', householdId)
       .eq('active', false);
-
-  if (inactiveListsError) {
-    console.error('Error fetching inactive shopping lists:', inactiveListsError);
-    throw inactiveListsError;
+  
+    if (inactiveListsError) {
+      console.error('Error fetching inactive shopping lists:', inactiveListsError);
+      throw inactiveListsError;
+    }
+  
+    return { activeItems, inactiveLists, activeShoppingListId };
   }
   
-    return { activeItems, inactiveLists };
+  async getActiveShoppingListId(householdId: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('ShoppingLists')
+      .select('id')
+      .eq('householdId', householdId)
+      .eq('active', true)
+      .single();
+  
+    if (error && error.code !== 'PGRST116') { // Ignore "No rows" error
+      console.error('Error fetching active shopping list ID:', error.message);
+      throw error;
+    }
+  
+    return data ? data.id : null;
+  }
+
+  async addShoppingListItem(item: ShoppingListItem): Promise<void> {
+  const { error } = await this.supabase
+    .from('ShoppingListItems')
+    .insert({
+      shoppingListId: item.shoppingListId,
+      item: item.item,
+      quantity: item.quantity,
+      unit: item.unit
+    });
+
+    if (error) {
+      console.error('Error adding shopping list item:', error.message);
+      throw error;
+    }
+  }
+  
+  async modifyShoppingListItem(item: any): Promise<void> {
+    const { error } = await this.supabase
+      .from('ShoppingListItems')
+      .update({
+        item: item.item,
+        quantity: item.quantity,
+        unit: item.unit,
+      })
+      .eq('id', item.id);
+  
+    if (error) {
+      console.error('Error updating shopping list item:', error.message);
+      throw error;
+    }
   }
   
   async deleteShoppingListItem(itemId: string): Promise<void> {
@@ -353,7 +400,7 @@ export class SupabaseService {
       console.error('Error deleting shopping list item:', error.message);
       throw error;
     }
-  }  
+  }    
   /// SHOPPING-LIST endregion
   /// OPTIONS region
   async updateUsername(newUsername: string): Promise<void> {

@@ -218,7 +218,11 @@ export class RecipesComponent implements OnInit {
   async updateStockAndShoppingList(ingredients: MealItem[], householdId: string): Promise<void> {
     // Fetch current stock items
     const stockItems = await this.supabaseService.getStockItems(householdId);
-  
+    let shoppingListId = await this.supabaseService.getActiveShoppingListId(householdId);
+    if (!shoppingListId) {
+      // Create a new shopping list if none exists
+      shoppingListId = await this.supabaseService.createShoppingList(householdId);
+    }
     for (const ingredient of ingredients) {
       const stockItem = stockItems.find(item => item.item.toLowerCase() === ingredient.item.toLowerCase());
   
@@ -246,21 +250,19 @@ export class RecipesComponent implements OnInit {
   
           // Add missing quantity to shopping list
           await this.supabaseService.addShoppingListItem({
-            householdId,
+            shoppingListId,
             item: ingredient.item,
             quantity: missingQuantity,
-            unit: ingredient.unit,
-            active: true
+            unit: ingredient.unit
           });
         }
       } else {
         // Stock item does not exist, add entire quantity to shopping list
         await this.supabaseService.addShoppingListItem({
-          householdId,
+          shoppingListId,
           item: ingredient.item,
           quantity: ingredient.quantity,
-          unit: ingredient.unit,
-          active: true
+          unit: ingredient.unit
         });
       }
     }
