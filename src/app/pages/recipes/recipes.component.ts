@@ -224,9 +224,13 @@ export class RecipesComponent implements OnInit {
   
       if (stockItem) {
         // Stock item exists
-        if (stockItem.quantity >= ingredient.quantity) {
+        let ingredientQuantity = ingredient.quantity;
+        if (ingredient.unit != stockItem.unit) {
+          ingredientQuantity = this.convertUnits(ingredient.quantity, ingredient.unit, stockItem.unit);
+        }
+        if (stockItem.quantity >= ingredientQuantity) {
           // Sufficient stock, deduct quantity
-          stockItem.quantity -= ingredient.quantity;
+          stockItem.quantity -= ingredientQuantity;
           if (stockItem.quantity === 0) {
             // If quantity becomes 0, remove the stock item
             await this.supabaseService.deleteStockItem(stockItem.id, householdId);
@@ -236,7 +240,7 @@ export class RecipesComponent implements OnInit {
           }
         } else {
           // Insufficient stock, deduct available quantity and add the rest to shopping list
-          const missingQuantity = ingredient.quantity - stockItem.quantity;
+          const missingQuantity = ingredientQuantity - stockItem.quantity;
           stockItem.quantity = 0;
           await this.supabaseService.deleteStockItem(stockItem.id, householdId);
   
@@ -260,5 +264,9 @@ export class RecipesComponent implements OnInit {
         });
       }
     }
+  }
+
+  convertUnits(amount: number, fromUnit: string, toUnit: string): number {
+    return 0;
   }
 }

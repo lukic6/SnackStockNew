@@ -4,7 +4,7 @@ import { LoginFormComponent, CreateAccountFormComponent } from './shared/compone
 import { AuthGuardService } from './shared/services';
 import { RecipesComponent } from './pages/recipes/recipes.component';
 import { ShoppingListComponent } from './pages/shopping-list/shopping-list.component';
-import { HistoryComponent } from './pages/history/history.component';
+import { MyMealsComponent } from './pages/my-meals/my-meals.component';
 import { OptionsComponent } from './pages/options/options.component';
 import { StockComponent } from './pages/stock/stock.component';
 import { DxiButtonModule, DxiItemModule, DxiValidationRuleModule, DxoButtonOptionsModule } from 'devextreme-angular/ui/nested';
@@ -18,7 +18,7 @@ const routes: Routes = [
     canActivate: [ AuthGuardService ]
   },
   {
-    path: 'recipes',
+    path: 'planning',
     component: RecipesComponent,
     canActivate: [AuthGuardService]
   },
@@ -28,8 +28,8 @@ const routes: Routes = [
     canActivate: [AuthGuardService]
   },
   {
-    path: 'history',
-    component: HistoryComponent,
+    path: 'my-meals',
+    component: MyMealsComponent,
     canActivate: [AuthGuardService]
   },
   {
@@ -76,7 +76,7 @@ const routes: Routes = [
     StockComponent,
     RecipesComponent,
     ShoppingListComponent,
-    HistoryComponent,
+    MyMealsComponent,
     OptionsComponent
   ]
 })

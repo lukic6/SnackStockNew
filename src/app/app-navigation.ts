@@ -5,9 +5,9 @@ export const navigation = [
     icon: 'home'
   },
   {
-    text: 'Recipes',
-    path: '/recipes',
-    icon: 'food'
+    text: 'Planning',
+    path: '/planning',
+    icon: 'description'
   },
   {
     text: 'Shopping List',
@@ -15,9 +15,9 @@ export const navigation = [
     icon: 'cart'
   },
   {
-    text: 'History',
-    path: '/history',
-    icon: 'event'
+    text: 'My Meals',
+    path: '/my-meals',
+    icon: 'food'
   },
   {
     text: 'Options',
