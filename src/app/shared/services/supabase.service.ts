@@ -296,6 +296,65 @@ export class SupabaseService {
     }
   }
   /// RECIPES endregion
+  /// SHOPPING-LIST region
+  async getShoppingLists(householdId: string): Promise<{ activeItems: any[], inactiveLists: any[] }> {
+    // Fetch active shopping list items
+    const { data: activeListIds, error: activeListIdsError } = await this.supabase
+      .from('ShoppingLists')
+      .select('id')
+      .eq('householdId', householdId)
+      .eq('active', true);
+
+    if (activeListIdsError) {
+      console.error('Error fetching active shopping list IDs:', activeListIdsError);
+      throw activeListIdsError;
+    }
+
+    const activeShoppingListIds = activeListIds.map((list: any) => list.id);
+
+    // Step 2: Fetch the active shopping list items
+    let activeItems: any[] = [];
+    if (activeShoppingListIds.length > 0) {
+      const { data: activeItemsData, error: activeItemsError } = await this.supabase
+        .from('ShoppingListItems')
+        .select('id, item, quantity, unit, shoppingListId')
+        .in('shoppingListId', activeShoppingListIds);  // Use the fetched active list IDs here
+
+      if (activeItemsError) {
+        console.error('Error fetching active shopping items:', activeItemsError);
+        throw activeItemsError;
+      }
+
+      activeItems = activeItemsData;
+    }
+  
+    // Step 3: Fetch inactive shopping lists and their items
+    const { data: inactiveLists, error: inactiveListsError } = await this.supabase
+      .from('ShoppingLists')
+      .select('id, ShoppingListItems(id, item, quantity, unit)')
+      .eq('householdId', householdId)
+      .eq('active', false);
+
+  if (inactiveListsError) {
+    console.error('Error fetching inactive shopping lists:', inactiveListsError);
+    throw inactiveListsError;
+  }
+  
+    return { activeItems, inactiveLists };
+  }
+  
+  async deleteShoppingListItem(itemId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('ShoppingListItems')
+      .delete()
+      .eq('id', itemId);
+  
+    if (error) {
+      console.error('Error deleting shopping list item:', error.message);
+      throw error;
+    }
+  }  
+  /// SHOPPING-LIST endregion
   /// OPTIONS region
   async updateUsername(newUsername: string): Promise<void> {
     const userId = localStorage.getItem('userId');

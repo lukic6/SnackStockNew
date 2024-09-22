@@ -1,1 +1,58 @@
-<p>shopping-list works!</p>
+<div class="shopping-list-container">
+    <!-- Active Shopping List Section -->
+    <h3 class="page-header">Active Shopping List</h3>
+    <dx-list
+        [dataSource]="activeShoppingItems"
+        [height]="'auto'"
+        [showSelectionControls]="false"
+        [displayExpr]="'item'"
+        [keyExpr]="'id'"
+        [allowItemDeleting]="true"
+        (onItemDeleted)="onItemDeleted($event)"
+    >
+      <div *dxTemplate="let item of 'item'">
+        <div class="shopping-list-item">
+            <p>{{ item.item }} ({{ item.quantity }} {{ item.unit }})</p>
+        </div>
+    </div>
+    </dx-list>
+
+    <!-- Section for Inactive Shopping Lists -->
+    <h3 class="page-header">Past Shopping Lists</h3>
+    <div class="inactive-lists-buttons">
+        <dx-button
+            *ngFor="let shoppingList of inactiveShoppingLists"
+            text="View List {{ shoppingList.id }}"
+            stylingMode="contained"
+            type="default"
+            (onClick)="openPopup(shoppingList)"
+        ></dx-button>
+    </div>
+
+    <!-- Popup for Viewing Inactive Shopping Lists -->
+    <dx-popup
+        [visible]="popupVisible"
+        [showCloseButton]="true"
+        [width]="600"
+        [height]="'auto'"
+        [dragEnabled]="false"
+        [hideOnOutsideClick]="true"
+        (onHiding)="popupVisible = false"
+        title="Shopping List {{ selectedShoppingList?.id }}"
+    >
+        <div *ngIf="selectedShoppingListItems && selectedShoppingListItems.length > 0">
+            <dx-list
+                [dataSource]="selectedShoppingListItems"
+                [height]="400"
+                [showSelectionControls]="false"
+                [displayExpr]="'item'"
+            >
+            <div *dxTemplate="let item of 'item'">
+                    <div class="shopping-list-item">
+                        <p>{{ item.item }} ({{ item.quantity }} {{ item.unit }})</p>
+                    </div>
+                </div>
+            </dx-list>
+        </div>
+    </dx-popup>
+</div>  
