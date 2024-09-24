@@ -230,7 +230,7 @@ export class RecipesComponent implements OnInit {
         // Stock item exists
         let ingredientQuantity = ingredient.quantity;
         if (ingredient.unit != stockItem.unit) {
-          ingredientQuantity = this.convertUnits(ingredient.quantity, ingredient.unit, stockItem.unit);
+          ingredientQuantity = await this.convertUnits(ingredient.quantity, ingredient.unit, stockItem.unit, ingredient.item);
         }
         if (stockItem.quantity >= ingredientQuantity) {
           // Sufficient stock, deduct quantity
@@ -268,7 +268,19 @@ export class RecipesComponent implements OnInit {
     }
   }
 
-  convertUnits(amount: number, fromUnit: string, toUnit: string): number {
-    return 0;
+  async convertUnits(amount: number, fromUnit: string, toUnit: string, ingredientName: string): Promise<number> {
+    const url = `https://api.spoonacular.com/recipes/convert?ingredientName=${encodeURIComponent(ingredientName)}&sourceAmount=${amount}&sourceUnit=${encodeURIComponent(fromUnit)}&targetUnit=${encodeURIComponent(toUnit)}&apiKey=${SPOONACULAR_API_KEY}`;
+    try {
+      const response : any = await this.http.get(url).toPromise();
+      if (response && response.targetAmount) {
+        return response.targetAmount;
+      } else {
+        console.warn(`Conversion failed for ${ingredientName}: from ${fromUnit} to ${toUnit}`, response);
+        return amount; // Fallback to original amount
+      }
+    } catch (error) {
+      console.error(`Error converting units for ${ingredientName} from ${fromUnit} to ${toUnit}:`, error);
+      return amount; // Fallback to original amount
+    }
   }
 }
