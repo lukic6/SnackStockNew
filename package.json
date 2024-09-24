@@ -26,6 +26,7 @@
     "devextreme": "24.1.4",
     "devextreme-angular": "24.1.4",
     "devextreme-schematics": "^1.7.1",
+    "fuse.js": "^7.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
