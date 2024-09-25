@@ -110,7 +110,7 @@
     <div class="inactive-lists-buttons">
         <dx-button
             *ngFor="let shoppingList of inactiveShoppingLists"
-            text="View List {{ shoppingList.id }}"
+            text="Bought on: {{ shoppingList.dateArchived | date:'dd.MM.yyyy' }}"
             stylingMode="contained"
             type="default"
             (onClick)="openPopup(shoppingList)"

@@ -397,7 +397,7 @@ export class SupabaseService {
       // Step 4: Archive the shopping list by setting active to false
       const { error: archiveError } = await this.supabase
         .from('ShoppingLists')
-        .update({ active: false })
+        .update({ active: false, dateArchived: new Date().toISOString() })
         .eq('id', shoppingListId);
   
       if (archiveError) {
@@ -432,7 +432,7 @@ export class SupabaseService {
     // Fetch active shopping list
     const { data: activeLists, error: activeListsError } = await this.supabase
       .from('ShoppingLists')
-      .select('id')
+      .select('id, dateArchived')
       .eq('householdId', householdId)
       .eq('active', true);
   
@@ -464,7 +464,7 @@ export class SupabaseService {
     // Fetch inactive shopping lists and their items
     const { data: inactiveLists, error: inactiveListsError } = await this.supabase
       .from('ShoppingLists')
-      .select('id, ShoppingListItems(id, item, quantity, unit)')
+      .select('id, dateArchived, ShoppingListItems(id, item, quantity, unit)')
       .eq('householdId', householdId)
       .eq('active', false);
   
