@@ -239,10 +239,10 @@ export class SupabaseService {
     return data[0];
   }
 
-  async addMealItem(mealItem: { mealId: string; item: string; quantity: number; unit: string }): Promise<void> {
+  async addMealItems(mealItems: { mealId: string; item: string; quantity: number; unit: string }[]): Promise<void> {
     const { error } = await this.supabase
       .from('MealItems')
-      .insert(mealItem);
+      .insert(mealItems);
   
     if (error) {
       console.error('Error adding meal item:', error.message);
@@ -359,20 +359,55 @@ export class SupabaseService {
   }
 
   async addShoppingListItem(item: ShoppingListItem): Promise<void> {
-  const { error } = await this.supabase
-    .from('ShoppingListItems')
-    .insert({
-      shoppingListId: item.shoppingListId,
-      item: item.item,
-      quantity: item.quantity,
-      unit: item.unit
-    });
-
-    if (error) {
-      console.error('Error adding shopping list item:', error.message);
+    try {
+      // Check if the item already exists in the active shopping list
+      const { data: existingItem, error: fetchError } = await this.supabase
+        .from('ShoppingListItems')
+        .select('*')
+        .eq('shoppingListId', item.shoppingListId)
+        .eq('item', item.item)
+        .single();
+  
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // If it's not a "No record found" error, handle it
+        console.error('Error fetching shopping list item:', fetchError.message);
+        throw fetchError;
+      }
+  
+      if (existingItem) {
+        // If the item exists, update its quantity by adding the new quantity
+        const updatedQuantity = existingItem.quantity + item.quantity;
+        const { error: updateError } = await this.supabase
+          .from('ShoppingListItems')
+          .update({ quantity: updatedQuantity })
+          .eq('id', existingItem.id);
+  
+        if (updateError) {
+          console.error('Error updating shopping list item:', updateError.message);
+          throw updateError;
+        }
+      } else {
+        // If the item does not exist, insert a new item into the shopping list
+        const { error: insertError } = await this.supabase
+          .from('ShoppingListItems')
+          .insert({
+            shoppingListId: item.shoppingListId,
+            item: item.item,
+            quantity: item.quantity,
+            unit: item.unit,
+          });
+  
+        if (insertError) {
+          console.error('Error adding shopping list item:', insertError.message);
+          throw insertError;
+        }
+      }
+    } catch (error) {
+      console.error('Error in addShoppingListItem:', error);
       throw error;
     }
   }
+  
   
   async modifyShoppingListItem(item: any): Promise<void> {
     const { error } = await this.supabase

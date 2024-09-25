@@ -194,24 +194,33 @@ export class RecipesComponent implements OnInit {
       const mealData = await this.supabaseService.addMeal(meal);
       const mealId = mealData.id;
   
-      // 2. Get Ingredients and Calculate Quantities
-      const ingredients = this.selectedRecipe.extendedIngredients.map((ingredient: any) => {
+      // 2. Get Used Ingredients and Calculate Quantities
+      const usedIngredients = this.selectedRecipe.usedIngredients.map((ingredient: any) => {
         return {
           mealId,
           item: ingredient.name,
-          quantity: ingredient.measures.metric.amount * this.numberOfServings / this.selectedRecipe.servings,
-          unit: ingredient.measures.metric.unitShort,
+          quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
+          unit: ingredient.unit,
         };
       });
-  
-      // 3. Save Ingredients to MealItems Table
-      for (const ingredient of ingredients) {
-        await this.supabaseService.addMealItem(ingredient);
-      }
-  
-      // 4. Update Stock and Shopping List
-      await this.updateStockAndShoppingList(ingredients, householdId);
-  
+
+      // 3. Get Missed Ingredients and Calculate Quantities
+      const missedIngredients = this.selectedRecipe.missedIngredients.map((ingredient: any) => {
+        return {
+          mealId,
+          item: ingredient.name,
+          quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
+          unit: ingredient.unit,
+        };
+      });
+
+      // 4. Save All Ingredients to MealItems Table
+      const allIngredients = [...usedIngredients, ...missedIngredients];
+      await this.supabaseService.addMealItems(allIngredients);
+
+      // 5. Update Stock and Shopping List
+      await this.updateStockAndShoppingList(usedIngredients, missedIngredients, householdId);
+
       notify('Meal planned successfully!', 'success', 2000);
       this.selectedRecipe = null; // Close the popup
     } catch (error) {
@@ -220,7 +229,7 @@ export class RecipesComponent implements OnInit {
     }
   }
   
-  async updateStockAndShoppingList(ingredients: MealItem[], householdId: string): Promise<void> {
+  async updateStockAndShoppingList( usedIngredients: MealItem[], missedIngredients: MealItem[], householdId: string): Promise<void> {
     // Fetch current stock items
     const stockItems = await this.supabaseService.getStockItems(householdId);
     let shoppingListId = await this.supabaseService.getActiveShoppingListId(householdId);
@@ -229,36 +238,30 @@ export class RecipesComponent implements OnInit {
       shoppingListId = await this.supabaseService.createShoppingList(householdId);
     }
   
-    // Initialize Fuse.js and normalize function outside the loop
+    // Initialize Fuse.js for fuzzy matching
     const fuseOptions = {
       includeScore: true,
-      threshold: 0.5, // Adjust this value based on desired strictness
+      threshold: 0.5,
       keys: ['item']
     };
     const fuse = new Fuse(stockItems, fuseOptions);
-  
+
     // Normalize function to process ingredient names
     const normalize = (str: string) => {
       return str
         .toLowerCase()
         .replace(/s$/, '') // Remove plural 's'
-        .replace(/\b(fresh|dried|ground|organic|large|small|medium|whole|fat-free|corn)\b/g, '') // Remove stop words
+        .replace(/\b(fresh|dried|ground|organic|large|small|medium|whole|fat-free)\b/g, '') // Remove stop words
         .trim();
     };
-  
-    for (const ingredient of ingredients) {
-      let stockItem: StockItem | undefined;
-  
-      // **First Matching Step: Check `usedIngredients`**
-      if (this.selectedRecipe.usedIngredients) {
-        const usedIngredient = this.selectedRecipe.usedIngredients.find(
-          (item: any) => item.name.toLowerCase() === ingredient.item.toLowerCase()
-        );
-        if (usedIngredient) {
-          stockItem = stockItems.find(item => item.item.toLowerCase() === usedIngredient.name.toLowerCase());
-        }
-      }
-  
+
+    // Process usedIngredients
+    for (const ingredient of usedIngredients) {
+      // Find the stock item that matches the ingredient
+      let stockItem = stockItems.find(
+        (item) => item.item.toLowerCase() === ingredient.item.toLowerCase()
+      );
+
       // **Second Matching Step: Fuzzy Matching**
       if (!stockItem) {
         const normalizedIngredientName = normalize(ingredient.item);
@@ -267,19 +270,19 @@ export class RecipesComponent implements OnInit {
           stockItem = results[0].item;
         }
       }
-  
+
       // **Third Matching Step: Use Substitutes**
       if (!stockItem) {
         const substitutes = await this.getIngredientSubstitutes(ingredient.item);
         for (const substitute of substitutes) {
           const normalizedSubstitute = normalize(substitute);
-  
+
           // Try exact match with substitute
           stockItem = stockItems.find(item => normalize(item.item) === normalizedSubstitute);
           if (stockItem) {
             break;
           }
-  
+
           // If still no match, try fuzzy matching with substitute
           const substituteResults = fuse.search(normalizedSubstitute);
           if (substituteResults.length > 0) {
@@ -288,13 +291,21 @@ export class RecipesComponent implements OnInit {
           }
         }
       }
-  
+
       if (stockItem) {
-        // Proceed with stock deduction logic as before
+        // Proceed with stock deduction logic
         let ingredientQuantity = ingredient.quantity;
+
+        // Convert units if necessary
         if (ingredient.unit !== stockItem.unit) {
-          ingredientQuantity = await this.convertUnits(ingredient.quantity, ingredient.unit, stockItem.unit, ingredient.item);
+          ingredientQuantity = await this.convertUnits(
+            ingredient.quantity,
+            ingredient.unit,
+            stockItem.unit,
+            ingredient.item
+          );
         }
+
         if (stockItem.quantity >= ingredientQuantity) {
           // Sufficient stock, deduct quantity
           stockItem.quantity -= ingredientQuantity;
@@ -310,7 +321,7 @@ export class RecipesComponent implements OnInit {
           const missingQuantity = ingredientQuantity - stockItem.quantity;
           stockItem.quantity = 0;
           await this.supabaseService.deleteStockItem(stockItem.id, householdId);
-  
+
           // Add missing quantity to shopping list
           await this.supabaseService.addShoppingListItem({
             shoppingListId,
@@ -329,14 +340,36 @@ export class RecipesComponent implements OnInit {
         });
       }
     }
+
+    // Process missedIngredients: add them directly to shopping list
+    for (const ingredient of missedIngredients) {
+      await this.supabaseService.addShoppingListItem({
+        shoppingListId,
+        item: ingredient.item,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit
+      });
+    }
   }
 
   async getIngredientSubstitutes(ingredientName: string): Promise<string[]> {
     const url = `https://api.spoonacular.com/food/ingredients/substitutes?ingredientName=${encodeURIComponent(ingredientName)}&apiKey=${SPOONACULAR_API_KEY}`;
     try {
       const response: any = await lastValueFrom(this.http.get(url));
-      if (response.status === 'success' && response.substitutes) {
-        return response.substitutes;
+      if (response && response.substitutes) {
+        // Parse the substitutes to extract ingredient names
+        const substitutes = response.substitutes.flatMap((substitute: string) => {
+          // Remove quantity and measurement from the substitute string
+          const parts = substitute.split('=');
+          const substitutePart = parts.length === 2 ? parts[1].trim() : substitute.trim();
+
+          // Split at '+' to handle combinations
+          return substitutePart.split('+').map(part => {
+            // Remove quantity and units (e.g., "1 cup")
+            return part.replace(/^\d+(\.\d+)?\s*\w*\s*/, '').trim();
+          });
+        });
+        return substitutes;
       } else {
         return [];
       }
