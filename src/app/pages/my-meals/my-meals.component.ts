@@ -37,7 +37,6 @@ export class MyMealsComponent implements OnInit {
     // Fetch MealItems for the selected meal
     try {
       this.mealItems = await this.supabaseService.getMealItems(meal.id);
-      console.log(this.selectedMeal);
       this.popupVisible = true;
     } catch (error) {
       console.error('Error fetching meal items:', error);

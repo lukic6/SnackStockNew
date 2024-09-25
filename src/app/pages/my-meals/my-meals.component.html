@@ -8,23 +8,25 @@
     >
         <div *dxTemplate="let meal of 'item'">
             <div class="meal-item">
-            <dx-button
-                text="{{ meal.mealName }}"
-                stylingMode="text"
-                (onClick)="openMealPopup(meal)">
-            </dx-button>
-            <dx-button
-                text="Cook the Meal"
-                stylingMode="contained"
-                type="success"
-                (onClick)="cookMeal(meal)">
-            </dx-button>
-            <dx-button
-                text="Delete"
-                stylingMode="contained"
-                type="danger"
-                (onClick)="deleteMeal(meal)">
-            </dx-button>
+                <dx-button
+                    text="{{ meal.mealName }}"
+                    stylingMode="text"
+                    (onClick)="openMealPopup(meal)">
+                </dx-button>
+                <div class="meal-actions">
+                    <dx-button
+                        text="Cook the Meal"
+                        stylingMode="contained"
+                        type="success"
+                        (onClick)="cookMeal(meal)">
+                    </dx-button>
+                    <dx-button
+                        text="Delete"
+                        stylingMode="contained"
+                        type="danger"
+                        (onClick)="deleteMeal(meal)">
+                    </dx-button>
+                </div>
             </div>
         </div>
     </dx-list>
@@ -51,8 +53,10 @@
     <!-- Meal Details Popup -->
     <dx-popup
         [visible]="popupVisible"
+        [deferRendering]="false"
         [showCloseButton]="true"
-        [width]="600"
+        [width]="'90%'"
+        [maxWidth]="420"
         [height]="'auto'"
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
@@ -60,7 +64,7 @@
         [title]="selectedMeal?.mealName || 'Meal Name Missing'"
     >
         <div *ngIf="selectedMeal">
-            <h3 class="page-header">Instructions</h3>
+            <h3 class="page-header first-popup-header">Instructions</h3>
             <div [innerHTML]="selectedMeal.instructions"></div>
             <h3 class="page-header">Ingredients</h3>
             <dx-list

@@ -4,3 +4,20 @@
     font-weight: 700;
     flex-grow: 1;
 }
+
+.meal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.meal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.first-popup-header {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
