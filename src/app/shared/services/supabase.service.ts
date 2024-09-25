@@ -2,13 +2,15 @@ import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { supabaseKey, supabaseUrl } from '../../../supabase-creds';
 import { StockItem, ShoppingListItem } from '../../../app-interfaces';
+import { SPOONACULAR_API_KEY } from '../../../api-creds';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
-  constructor() { 
+  constructor(private http: HttpClient) { 
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
@@ -260,23 +262,155 @@ export class SupabaseService {
       unit: item.unit,
     });
 
-  if (error) {
-    console.error('Error adding shopping list item:', error.message);
-    throw error;
-  }
-}
-
-  async archiveShoppingList(shoppingListId: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('ShoppingLists')
-      .update({ active: false })
-      .eq('id', shoppingListId);
-  
     if (error) {
-      console.error('Error archiving shopping list:', error.message);
+      console.error('Error adding shopping list item:', error.message);
       throw error;
     }
   }
+
+  async archiveShoppingList(shoppingListId: string): Promise<void> {
+    try {
+      // Step 1: Fetch all items from the ShoppingListItems for the current shopping list
+      const { data: shoppingItems, error: fetchError } = await this.supabase
+        .from('ShoppingListItems')
+        .select('*')
+        .eq('shoppingListId', shoppingListId);
+  
+      if (fetchError) {
+        console.error('Error fetching shopping list items:', fetchError.message);
+        throw fetchError;
+      }
+  
+      if (!shoppingItems || shoppingItems.length === 0) {
+        console.warn('No items found in shopping list');
+        return;
+      }
+  
+      // Step 2: Fetch householdId from the associated ShoppingList
+      const { data: shoppingList, error: listError } = await this.supabase
+        .from('ShoppingLists')
+        .select('householdId')
+        .eq('id', shoppingListId)
+        .single();
+  
+      if (listError || !shoppingList) {
+        console.error('Error fetching shopping list:', listError?.message || 'No shopping list found');
+        throw listError || new Error('No shopping list found');
+      }
+  
+      const householdId = shoppingList.householdId;
+  
+      // Step 2a: Fetch stockId from the Stocks table for the household
+      const { data: stocksData, error: stocksError } = await this.supabase
+        .from('Stocks')
+        .select('id')
+        .eq('householdId', householdId)
+        .single();
+  
+      if (stocksError || !stocksData) {
+        console.error('Error fetching Stocks record:', stocksError?.message || 'No Stocks record found');
+        throw stocksError || new Error('No Stocks record found');
+      }
+  
+      const stockId = stocksData.id;
+  
+      // Step 3: For each shopping item, add it to the StockItems of the household
+      for (const item of shoppingItems) {
+        // Check if the item already exists in StockItems for the household
+        const { data: existingStockItem, error: stockFetchError } = await this.supabase
+          .from('StockItems')
+          .select('*')
+          .eq('stockId', stockId)
+          .eq('item', item.item)
+          .maybeSingle(); // Use maybeSingle to allow for no results
+  
+        if (stockFetchError && stockFetchError.code !== 'PGRST116') {
+          console.error('Error fetching stock item:', stockFetchError.message);
+          throw stockFetchError;
+        }
+  
+        if (existingStockItem) {
+          // If item exists, update the quantity
+          let totalQuantity = existingStockItem.quantity + item.quantity;
+  
+          // Handle unit conversion if necessary
+          if (existingStockItem.unit !== item.unit) {
+            // Attempt to convert units
+            const convertedQuantity = await this.convertUnits(
+              item.quantity,
+              item.unit,
+              existingStockItem.unit,
+              item.item
+            );
+  
+            // If conversion is successful, add to total quantity
+            if (convertedQuantity !== item.quantity) {
+              totalQuantity = existingStockItem.quantity + convertedQuantity;
+            } else {
+              console.warn(`Unit conversion failed for ${item.item}. Adding as a new stock item.`);
+              // Decide how to handle this case. For now, we'll insert as a new stock item.
+              const { error: insertError } = await this.supabase
+                .from('StockItems')
+                .insert({
+                  stockId,
+                  item: item.item,
+                  quantity: item.quantity,
+                  unit: item.unit,
+                });
+  
+              if (insertError) {
+                console.error('Error adding new stock item:', insertError.message);
+                throw insertError;
+              }
+              continue; // Move to the next item
+            }
+          }
+  
+          // Update the existing stock item's quantity
+          const { error: updateError } = await this.supabase
+            .from('StockItems')
+            .update({ quantity: totalQuantity })
+            .eq('id', existingStockItem.id);
+  
+          if (updateError) {
+            console.error('Error updating stock item:', updateError.message);
+            throw updateError;
+          }
+        } else {
+          // If item does not exist, insert it into StockItems
+          const { error: insertError } = await this.supabase
+            .from('StockItems')
+            .insert({
+              stockId,
+              item: item.item,
+              quantity: item.quantity,
+              unit: item.unit,
+            });
+  
+          if (insertError) {
+            console.error('Error adding new stock item:', insertError.message);
+            throw insertError;
+          }
+        }
+      }
+  
+      // Step 4: Archive the shopping list by setting active to false
+      const { error: archiveError } = await this.supabase
+        .from('ShoppingLists')
+        .update({ active: false })
+        .eq('id', shoppingListId);
+  
+      if (archiveError) {
+        console.error('Error archiving shopping list:', archiveError.message);
+        throw archiveError;
+      }
+  
+    } catch (error) {
+      console.error('Error in archiveShoppingList:', error);
+      throw error;
+    }
+  }
+  
   
   async createShoppingList(householdId: string): Promise<string> {
     const { data, error } = await this.supabase
@@ -704,4 +838,25 @@ export class SupabaseService {
     return data || [];
   }
   /// OPTIONS endregion
+  /// SHARED FUNCTIONS
+  async convertUnits(amount: number, fromUnit: string, toUnit: string, ingredientName: string): Promise<number> {
+    const url = `https://api.spoonacular.com/recipes/convert?ingredientName=${encodeURIComponent(ingredientName)}&sourceAmount=${amount}&sourceUnit=${encodeURIComponent(fromUnit)}&targetUnit=${encodeURIComponent(toUnit)}&apiKey=${SPOONACULAR_API_KEY}`;
+    if (!fromUnit || fromUnit.trim() === "") {
+      console.warn(`Missing source unit for ${ingredientName}. Returning original amount.`);
+      return amount; // No conversion is possible, return original amount
+    } else if (!toUnit || toUnit.trim() === "")
+        return amount; // No conversion is possible, return original amount
+    try {
+      const response : any = await this.http.get(url).toPromise();
+      if (response && response.targetAmount) {
+        return response.targetAmount;
+      } else {
+        console.warn(`Conversion failed for ${ingredientName}: from ${fromUnit} to ${toUnit}`, response);
+        return amount; // Fallback to original amount
+      }
+    } catch (error) {
+      console.error(`Error converting units for ${ingredientName} from ${fromUnit} to ${toUnit}:`, error);
+      return amount; // Fallback to original amount
+    }
+  }
 }
