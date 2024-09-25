@@ -1,1 +1,87 @@
-<p>my-meals works!</p>
+<div class="my-meals-container">
+    <!-- Planned Meals Section -->
+    <h3 class="page-header">Planned Meals</h3>
+    <dx-list
+        [dataSource]="plannedMeals"
+        [height]="'auto'"
+        [showSelectionControls]="false"
+    >
+        <div *dxTemplate="let meal of 'item'">
+            <div class="meal-item">
+            <dx-button
+                text="{{ meal.mealName }}"
+                stylingMode="text"
+                (onClick)="openMealPopup(meal)">
+            </dx-button>
+            <dx-button
+                text="Cook the Meal"
+                stylingMode="contained"
+                type="success"
+                (onClick)="cookMeal(meal)">
+            </dx-button>
+            <dx-button
+                text="Delete"
+                stylingMode="contained"
+                type="danger"
+                (onClick)="deleteMeal(meal)">
+            </dx-button>
+            </div>
+        </div>
+    </dx-list>
+    
+    <!-- Meal History Section -->
+    <h3 class="page-header">Meals History</h3>
+    <dx-list
+        [dataSource]="mealHistory"
+        [height]="'auto'"
+        [showSelectionControls]="false"
+    >
+    <div *dxTemplate="let meal of 'item'">
+        <div class="meal-item">
+        <dx-button
+            text="{{ meal.mealName }}"
+            stylingMode="contained"
+            type="default"
+            (onClick)="openMealPopup(meal)">
+        </dx-button>
+        </div>
+    </div>
+    </dx-list>
+    
+    <!-- Meal Details Popup -->
+    <dx-popup
+        [visible]="popupVisible"
+        [showCloseButton]="true"
+        [width]="600"
+        [height]="'auto'"
+        [dragEnabled]="false"
+        [hideOnOutsideClick]="true"
+        (onHiding)="closePopup()"
+        [title]="selectedMeal?.mealName || 'Meal Name Missing'"
+    >
+        <div *ngIf="selectedMeal">
+            <h3 class="page-header">Instructions</h3>
+            <div [innerHTML]="selectedMeal.instructions"></div>
+            <h3 class="page-header">Ingredients</h3>
+            <dx-list
+                [dataSource]="mealItems"
+                [height]="200"
+                [showSelectionControls]="false"
+            >
+            <div *dxTemplate="let item of 'item'">
+                <div class="meal-item">
+                <p>{{ item.item }} ({{ item.quantity }} {{ item.unit }})</p>
+                </div>
+            </div>
+            </dx-list>
+            <!-- Plan Again Button for Meal History -->
+            <dx-button
+                *ngIf="!selectedMeal.active"
+                text="Plan Again"
+                stylingMode="contained"
+                type="default"
+                (onClick)="planAgain(selectedMeal)">
+            </dx-button>
+        </div>
+    </dx-popup>
+</div>  

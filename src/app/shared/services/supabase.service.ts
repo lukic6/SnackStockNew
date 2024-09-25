@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { supabaseKey, supabaseUrl } from '../../../supabase-creds';
-import { StockItem, ShoppingListItem } from '../../../app-interfaces';
+import { StockItem, ShoppingListItem, Meal, MealItem } from '../../../app-interfaces';
 import { SPOONACULAR_API_KEY } from '../../../api-creds';
 import { HttpClient } from '@angular/common/http';
 
@@ -230,7 +230,7 @@ export class SupabaseService {
   async addMeal(meal: { householdId: string; mealName: string; servings: number; instructions: string }): Promise<{ id: string }> {
     const { data, error } = await this.supabase
     .from('Meals')
-    .insert(meal)
+    .insert({...meal, active: true})
     .select();
 
     if (error) {
@@ -500,7 +500,7 @@ export class SupabaseService {
         .select('*')
         .eq('shoppingListId', item.shoppingListId)
         .eq('item', item.item)
-        .single();
+        .maybeSingle();
   
       if (fetchError && fetchError.code !== 'PGRST116') {
         // If it's not a "No record found" error, handle it
@@ -571,6 +571,35 @@ export class SupabaseService {
     }
   }    
   /// SHOPPING-LIST endregion
+  /// MY-MEALS region
+  async getMeals(householdId: string): Promise<Meal[]> {
+    const { data, error } = await this.supabase
+      .from('Meals')
+      .select('*')
+      .eq('householdId', householdId);
+
+    if (error) {
+      console.error('Error fetching meals:', error.message);
+      throw error;
+    }
+
+    return data as Meal[];
+  }
+
+  async getMealItems(mealId: string): Promise<MealItem[]> {
+    const { data, error } = await this.supabase
+      .from('MealItems')
+      .select('*')
+      .eq('mealId', mealId);
+
+    if (error) {
+      console.error('Error fetching meal items:', error.message);
+      throw error;
+    }
+
+    return data as MealItem[];
+  }
+  /// MY-MEALS endregion
   /// OPTIONS region
   async updateUsername(newUsername: string): Promise<void> {
     const userId = localStorage.getItem('userId');

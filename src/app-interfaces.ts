@@ -20,3 +20,12 @@ export interface ShoppingListItem {
     quantity: number;
     unit: string;
 }
+
+export interface Meal {
+    id: string;
+    householdId: string;
+    mealName: string;
+    servings: number;
+    instructions: string;
+    active: boolean;
+}
