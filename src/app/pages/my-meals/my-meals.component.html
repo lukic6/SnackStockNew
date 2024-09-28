@@ -15,13 +15,13 @@
                 </dx-button>
                 <div class="meal-actions">
                     <dx-button
-                        text="Cook the Meal"
+                        icon="check"
                         stylingMode="contained"
                         type="success"
                         (onClick)="cookMeal(meal)">
                     </dx-button>
                     <dx-button
-                        text="Delete"
+                        icon="trash"
                         stylingMode="contained"
                         type="danger"
                         (onClick)="deleteMeal(meal)">
@@ -58,6 +58,7 @@
         [width]="'90%'"
         [maxWidth]="420"
         [height]="'auto'"
+        [maxHeight]="'100vh'"
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
         (onHiding)="closePopup()"

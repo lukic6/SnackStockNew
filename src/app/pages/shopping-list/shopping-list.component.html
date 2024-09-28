@@ -2,20 +2,22 @@
     <!-- Header with title and Add button -->
     <div class="shopping-list-header">
         <h3 class="page-header">Shopping List</h3>
-        <dx-button
-            icon="plus"
-            text="Add Item"
-            stylingMode="contained"
-            type="default"
-            (onClick)="onAddItemClick()"
-        ></dx-button>
-        <dx-button
-            text="Shopping Bought"
-            stylingMode="contained"
-            type="success"
-            (onClick)="onShoppingBoughtClick()"
-            [disabled]="!activeShoppingItems.length"
-        ></dx-button>
+        <div class="button-group">
+            <dx-button
+                icon="plus"
+                text="Add Item"
+                stylingMode="contained"
+                type="default"
+                (onClick)="onAddItemClick()"
+            ></dx-button>
+            <dx-button
+                text="Shopping Bought"
+                stylingMode="contained"
+                type="success"
+                (onClick)="onShoppingBoughtClick()"
+                [disabled]="!activeShoppingItems.length"
+            ></dx-button>
+        </div>
     </div>
 
     <!-- DataGrid for active shopping list items -->
@@ -121,7 +123,8 @@
     <dx-popup
         [visible]="archivePopupVisible"
         [showCloseButton]="true"
-        [width]="600"
+        [maxWidth]="600"
+        [width]="'90%'"
         [height]="'auto'"
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"

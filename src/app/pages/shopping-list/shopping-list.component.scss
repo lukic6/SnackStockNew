@@ -18,6 +18,30 @@
     flex-grow: 1;
 }
 
+@media (max-width: 600px) {
+    .shopping-list-header {
+        flex-direction: column; /* Stack header and button container */
+        align-items: flex-start; /* Align header to start */
+    }
+
+    .shopping-list-header h3 {
+        margin-bottom: 10px; /* Space between header and buttons */
+    }
+
+    /* Create a container for buttons to keep them inline */
+    .button-group {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%; /* Full width to align buttons to the right */
+    }
+
+    .button-group dx-button {
+        margin-left: 10px; /* Add space between buttons */
+        margin-right: 0; /* Remove margin-right */
+        align-self: flex-end;
+    }
+}
+
 .inactive-lists-buttons {
     display: flex;
     flex-direction: column-reverse;

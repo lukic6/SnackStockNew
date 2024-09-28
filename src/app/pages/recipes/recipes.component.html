@@ -44,7 +44,8 @@
     <dx-popup
         [visible]="popupVisible"
         [showCloseButton]="true"
-        [width]="600"
+        [width]="'90%'"
+        [maxWidth]="420"
         [height]="'auto'"
         [dragEnabled]="false"
         [hideOnOutsideClick]="true"
@@ -52,32 +53,16 @@
         title="Search for Meals"
     >
         <div class="popup-content">
-        <dx-autocomplete
-            [(value)]="searchQuery"
-            [dataSource]="mealSuggestions"
-            [minSearchLength]="3"
-            [searchTimeout]="500"
-            valueExpr="title"
-            displayExpr="title"
-            (onValueChanged)="onMealSelected($event)"
-            (onInput)="onMealInput($event)"
-        ></dx-autocomplete>
-
-        <!-- Display search results -->
-        <dx-list
-            [dataSource]="mealSuggestions"
-            [height]="300"
-            [showSelectionControls]="false"
-            (onItemClick)="onMealSuggestionClick($event)"
-            *ngIf="mealSuggestions && mealSuggestions.length > 0"
-        >
-            <div *dxTemplate="let item of 'item'">
-                <div class="recipe-item">
-                    <h4>{{ item.title }}</h4>
-                    <img [src]="item.image" alt="{{ item.title }}" width="100" />
-                </div>
-            </div>
-        </dx-list>
+            <dx-autocomplete
+                [(value)]="searchQuery"
+                [dataSource]="mealSuggestions"
+                [minSearchLength]="3"
+                [searchTimeout]="500"
+                valueExpr="title"
+                displayExpr="title"
+                (onValueChanged)="onMealSelected($event)"
+                (onInput)="onMealInput($event)"
+            ></dx-autocomplete>
         </div>
     </dx-popup>
 
