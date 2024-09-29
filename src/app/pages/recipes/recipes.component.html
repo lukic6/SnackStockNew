@@ -40,9 +40,10 @@
     <h4 *ngIf="!recommendedRecipes || recommendedRecipes.length == 0">No recommendations.</h4>
 
     <!-- Custom Meal Section -->
-    <!-- <h3 class="page-header">Custom Selection</h3> -->
+    <h3 class="page-header second-header">Custom Selection</h3>
     <dx-autocomplete
-        label="Custom Selection"
+        class="meal-autocomplete"
+        label="Meal Name"
         labelMode="floating"
         [width]="'80%'"
         [(value)]="searchQuery"
@@ -53,6 +54,14 @@
         displayExpr="title"
         (onValueChanged)="onMealSelected($event)"
         (onInput)="onMealInput($event)"
+        [dropDownOptions]="{
+            position: {
+                my: 'bottom',
+                at: 'top',
+                of: '.meal-autocomplete .dx-texteditor-input-container',
+                collision: 'fit'
+            }
+        }"
     ></dx-autocomplete>
 
     <!-- Recipe Details Popup -->

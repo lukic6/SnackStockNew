@@ -107,7 +107,6 @@ export class RecipesComponent implements OnInit {
     if (query.length > 2) {
       this.searchSubject.next(query);
     }
-    event.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   fetchMealSuggestions(query: string): void {

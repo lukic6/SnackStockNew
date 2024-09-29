@@ -74,7 +74,7 @@
 
 .first-mobile-row {
     display: flex;
-    flex-direction: column; /* Stack the title in a single column */
+    flex-direction: column;
     align-items: flex-start;
 
     h4 {
@@ -82,7 +82,7 @@
         margin: 0;
         word-wrap: break-word !important;
         word-break: break-word !important;
-        width: 100%; /* Ensure the title takes up the full width */
+        width: 100%;
         white-space: normal !important;
     }
 }
@@ -96,4 +96,13 @@
     p {
         margin: 0;
     }
+}
+
+.second-header {
+    margin: 10px 0;
+}
+
+.meal-autocomplete {
+    margin-left: 10px;
+    max-width: 400px;
 }
