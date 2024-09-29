@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Subject, lastValueFrom } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -20,8 +20,13 @@ export class RecipesComponent implements OnInit {
   popupVisible: boolean = false;
   searchQuery: string = '';
   numberOfServings: number = 1;
+  isMobile: boolean = window.innerWidth <= 600;
 
   private searchSubject: Subject<string> = new Subject<string>();
+  @HostListener("window:resize", ["$event"])
+  onResize(event: any): void {
+    this.isMobile = window.innerWidth <= 600;
+  }
 
   constructor(
     private http: HttpClient,
@@ -87,9 +92,9 @@ export class RecipesComponent implements OnInit {
     }
   }
 
-  onOtherMealsClick(): void {
-    this.popupVisible = true;
-  }
+  // onOtherMealsClick(): void {
+  //   this.popupVisible = true;
+  // }
 
   onPopupClose(): void {
     this.popupVisible = false;
@@ -102,6 +107,7 @@ export class RecipesComponent implements OnInit {
     if (query.length > 2) {
       this.searchSubject.next(query);
     }
+    event.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   fetchMealSuggestions(query: string): void {

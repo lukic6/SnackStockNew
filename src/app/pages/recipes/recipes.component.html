@@ -9,9 +9,9 @@
         (onItemClick)="onRecipeClick($event)"
         >
         <div *dxTemplate="let item of 'item'">
-            <div class="recipe-item">
+            <div class="recipe-item" *ngIf="!isMobile">
                 <h4>{{ item.title }}</h4>
-                <img [src]="item.image" alt="{{ item.title }}" width="100" />
+                <!-- <img [src]="item.image" alt="{{ item.title }}" width="100" /> -->
                 <div class="recipe-item-ingredients">
                     <p>Used Ingredients: 
                         <span *ngFor="let ingredient of item.usedIngredients; let isLast = last">
@@ -25,46 +25,35 @@
                     </p>
                 </div>
             </div>
+            <div class="recipe-item mobile-recipe-item" *ngIf="isMobile">
+                <div class="first-mobile-row">
+                    <h4>{{ item.title }}</h4>
+                    <!-- <img [src]="item.image" alt="{{ item.title }}" width="100" /> -->
+                </div>
+                <div class="second-mobile-row">
+                    <p>Used Ingredients: {{ item.usedIngredients.length }} Missing Ingredients: {{ item.missedIngredients.length }}</p>
+                </div>
+            </div>
         </div>
         </dx-list>
     </div>
     <h4 *ngIf="!recommendedRecipes || recommendedRecipes.length == 0">No recommendations.</h4>
 
-    <!-- "Other Meals" Button -->
-    <div class="other-meals-button">
-        <dx-button
-        text="Other Meals"
-        stylingMode="contained"
-        type="default"
-        (onClick)="onOtherMealsClick()"
-        ></dx-button>
-    </div>
-
-    <!-- Popup for Other Meals -->
-    <dx-popup
-        [visible]="popupVisible"
-        [showCloseButton]="true"
-        [width]="'90%'"
-        [maxWidth]="420"
-        [height]="'auto'"
-        [dragEnabled]="false"
-        [hideOnOutsideClick]="true"
-        (onHiding)="onPopupClose()"
-        title="Search for Meals"
-    >
-        <div class="popup-content">
-            <dx-autocomplete
-                [(value)]="searchQuery"
-                [dataSource]="mealSuggestions"
-                [minSearchLength]="3"
-                [searchTimeout]="500"
-                valueExpr="title"
-                displayExpr="title"
-                (onValueChanged)="onMealSelected($event)"
-                (onInput)="onMealInput($event)"
-            ></dx-autocomplete>
-        </div>
-    </dx-popup>
+    <!-- Custom Meal Section -->
+    <!-- <h3 class="page-header">Custom Selection</h3> -->
+    <dx-autocomplete
+        label="Custom Selection"
+        labelMode="floating"
+        [width]="'80%'"
+        [(value)]="searchQuery"
+        [dataSource]="mealSuggestions"
+        [minSearchLength]="3"
+        [searchTimeout]="500"
+        valueExpr="title"
+        displayExpr="title"
+        (onValueChanged)="onMealSelected($event)"
+        (onInput)="onMealInput($event)"
+    ></dx-autocomplete>
 
     <!-- Recipe Details Popup -->
     <dx-popup

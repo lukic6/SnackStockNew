@@ -7,9 +7,11 @@
 .recipe-item {
     border-bottom: 1px solid #e0e0e0;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 15px;
-    height: 75px;
+    padding: 10px 0;
+    height: auto;
+    flex-wrap: wrap !important;
 }
 
 ::ng-deep .dx-list .dx-empty-message, .dx-list-item-content {
@@ -19,16 +21,25 @@
 .recipe-item h4 {
     margin: 0;
     font-size: 16px;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    width: 100%;
+    white-space: normal !important;
 }
 
 .recipe-item p {
     margin: 5px 0;
     font-size: 14px;
+    white-space: normal !important;
+    span {
+        white-space: normal !important;
+    }
 }
 
 .recipe-item-ingredients {
     font-size: 14px;
     line-height: 1.5;
+    width: 100%;
 }
 
 .recipe-item-ingredients p:first-of-type span {
@@ -50,4 +61,39 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
+}
+
+.mobile-recipe-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 0;
+    height: auto;
+}
+
+.first-mobile-row {
+    display: flex;
+    flex-direction: column; /* Stack the title in a single column */
+    align-items: flex-start;
+
+    h4 {
+        font-size: 16px;
+        margin: 0;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+        width: 100%; /* Ensure the title takes up the full width */
+        white-space: normal !important;
+    }
+}
+
+.second-mobile-row {
+    display: flex;
+    justify-content: flex-start;
+    font-size: 14px;
+    color: #555;
+
+    p {
+        margin: 0;
+    }
 }
