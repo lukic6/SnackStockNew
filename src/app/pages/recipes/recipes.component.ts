@@ -19,6 +19,7 @@ export class RecipesComponent implements OnInit {
   mealSuggestions: any[] = [];
   popupVisible: boolean = false;
   searchQuery: string = '';
+  isCustomSelection: boolean = false;
   numberOfServings: number = 1;
   isMobile: boolean = window.innerWidth <= 600;
 
@@ -100,6 +101,7 @@ export class RecipesComponent implements OnInit {
     this.popupVisible = false;
     this.searchQuery = '';
     this.mealSuggestions = [];
+    this.isCustomSelection = false;
   }
 
   onMealInput(event: any): void {
@@ -139,6 +141,7 @@ export class RecipesComponent implements OnInit {
     );
   
     if (selectedRecipe) {
+      this.isCustomSelection = true;
       this.fetchRecipeDetails(selectedRecipe.id);
     }
   }
@@ -198,36 +201,52 @@ export class RecipesComponent implements OnInit {
   
       const mealData = await this.supabaseService.addMeal(meal);
       const mealId = mealData.id;
+      let usedIngredients = [];
+      let missedIngredients = [];
   
-      // 2. Get Used Ingredients and Calculate Quantities
-      const usedIngredients = this.selectedRecipe.usedIngredients.map((ingredient: any) => {
-        return {
-          mealId,
-          item: ingredient.name,
-          quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
-          unit: ingredient.unit,
-        };
-      });
-
-      // 3. Get Missed Ingredients and Calculate Quantities
-      const missedIngredients = this.selectedRecipe.missedIngredients.map((ingredient: any) => {
-        return {
-          mealId,
-          item: ingredient.name,
-          quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
-          unit: ingredient.unit,
-        };
-      });
+      if (this.isCustomSelection) {  
+        usedIngredients = this.selectedRecipe.extendedIngredients.map((ingredient: any) => {
+          return {
+            mealId,
+            item: ingredient.name,
+            quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
+            unit: ingredient.unit,
+          };
+        });
+      } else {
+        // 2. Get Used Ingredients and Calculate Quantities (for recommended recipes)
+        usedIngredients = this.selectedRecipe.usedIngredients.map((ingredient: any) => {
+          return {
+            mealId,
+            item: ingredient.name,
+            quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
+            unit: ingredient.unit,
+          };
+        });
+  
+        // 3. Get Missed Ingredients and Calculate Quantities (for recommended recipes)
+        missedIngredients = this.selectedRecipe.missedIngredients.map((ingredient: any) => {
+          return {
+            mealId,
+            item: ingredient.name,
+            quantity: (ingredient.amount * this.numberOfServings) / this.selectedRecipe.servings,
+            unit: ingredient.unit,
+          };
+        });
+      }
 
       // 4. Save All Ingredients to MealItems Table
       const allIngredients = [...usedIngredients, ...missedIngredients];
-      await this.supabaseService.addMealItems(allIngredients);
+      if (allIngredients.length > 0) {
+        await this.supabaseService.addMealItems(allIngredients);
+      }
 
       // 5. Update Stock and Shopping List
       await this.updateStockAndShoppingList(usedIngredients, missedIngredients, householdId);
 
       notify('Meal planned successfully!', 'success', 2000);
       this.selectedRecipe = null; // Close the popup
+      this.isCustomSelection = false;
     } catch (error) {
       console.error('Error planning meal:', error);
       notify('Failed to plan meal. Please try again later.', 'error', 2000);
@@ -260,8 +279,8 @@ export class RecipesComponent implements OnInit {
         .trim();
     };
 
-    // Process usedIngredients
-    for (const ingredient of usedIngredients) {
+    // Process usedIngredients concurrently
+    await Promise.all(usedIngredients.map(async (ingredient) => {
       // Find the stock item that matches the ingredient
       let stockItem = stockItems.find(
         (item) => item.item.toLowerCase() === ingredient.item.toLowerCase()
@@ -344,17 +363,17 @@ export class RecipesComponent implements OnInit {
           unit: ingredient.unit
         });
       }
-    }
+    }));
 
-    // Process missedIngredients: add them directly to shopping list
-    for (const ingredient of missedIngredients) {
+    // Process missedIngredients concurrently
+    await Promise.all(missedIngredients.map(async (ingredient) => {
       await this.supabaseService.addShoppingListItem({
         shoppingListId,
         item: ingredient.item,
         quantity: ingredient.quantity,
         unit: ingredient.unit
       });
-    }
+    }));
   }
 
   async getIngredientSubstitutes(ingredientName: string): Promise<string[]> {
@@ -392,7 +411,7 @@ export class RecipesComponent implements OnInit {
     } else if (!toUnit || toUnit.trim() === "")
         return amount; // No conversion is possible, return original amount
     try {
-      const response : any = await this.http.get(url).toPromise();
+      const response : any = await lastValueFrom(this.http.get(url));
       if (response && response.targetAmount) {
         return response.targetAmount;
       } else {
