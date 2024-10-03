@@ -140,13 +140,15 @@ export class SupabaseService {
 
   const stockId = stocksData?.id;
 
+  const roundedQuantity = Math.round(stockItem.quantity * 100) / 100;
+
   // Now insert into StockItems
   const { data, error } = await this.supabase
     .from('StockItems')
     .insert({
       stockId,
       item: stockItem.item,
-      quantity: stockItem.quantity,
+      quantity: roundedQuantity,
       unit: stockItem.unit
     })
     .select();
@@ -177,12 +179,14 @@ export class SupabaseService {
 
     const stockId = stocksData.id;
 
+    const roundedQuantity = Math.round(stockItem.quantity * 100) / 100;
+
     // Update the StockItem
     const { data, error } = await this.supabase
       .from('StockItems')
       .update({
         item: stockItem.item,
-        quantity: stockItem.quantity,
+        quantity: roundedQuantity,
         unit: stockItem.unit
       })
       .eq('id', stockItem.id)
@@ -242,9 +246,14 @@ export class SupabaseService {
   }
 
   async addMealItems(mealItems: { mealId: string; item: string; quantity: number; unit: string }[]): Promise<void> {
+    const roundedMealItems = mealItems.map(item => ({
+      ...item,
+      quantity: Math.round(item.quantity * 100) / 100
+    }));
+
     const { error } = await this.supabase
       .from('MealItems')
-      .insert(mealItems);
+      .insert(roundedMealItems);
   
     if (error) {
       console.error('Error adding meal item:', error.message);
@@ -253,12 +262,14 @@ export class SupabaseService {
   }
 
   async addShoppingListItems(item: ShoppingListItem): Promise<void> {
+    const roundedQuantity = Math.round(item.quantity * 100) / 100;
+
     const { error } = await this.supabase
     .from('ShoppingListItems')
     .insert({
       shoppingListId: item.shoppingListId,
       item: item.item,
-      quantity: item.quantity,
+      quantity: roundedQuantity,
       unit: item.unit,
     });
 
@@ -354,7 +365,7 @@ export class SupabaseService {
                 .insert({
                   stockId,
                   item: item.item,
-                  quantity: item.quantity,
+                  quantity: Math.round(item.quantity * 100) / 100,
                   unit: item.unit,
                 });
   
@@ -365,6 +376,8 @@ export class SupabaseService {
               continue; // Move to the next item
             }
           }
+
+          totalQuantity = Math.round(totalQuantity * 100) / 100;
   
           // Update the existing stock item's quantity
           const { error: updateError } = await this.supabase
@@ -383,7 +396,7 @@ export class SupabaseService {
             .insert({
               stockId,
               item: item.item,
-              quantity: item.quantity,
+              quantity: Math.round(item.quantity * 100) / 100,
               unit: item.unit,
             });
   
@@ -510,7 +523,8 @@ export class SupabaseService {
   
       if (existingItem) {
         // If the item exists, update its quantity by adding the new quantity
-        const updatedQuantity = existingItem.quantity + item.quantity;
+        let updatedQuantity = existingItem.quantity + item.quantity;
+        updatedQuantity = Math.round(updatedQuantity * 100) / 100;
         const { error: updateError } = await this.supabase
           .from('ShoppingListItems')
           .update({ quantity: updatedQuantity })
@@ -527,7 +541,7 @@ export class SupabaseService {
           .insert({
             shoppingListId: item.shoppingListId,
             item: item.item,
-            quantity: item.quantity,
+            quantity: Math.round(item.quantity * 100) / 100,
             unit: item.unit,
           });
   
@@ -548,7 +562,7 @@ export class SupabaseService {
       .from('ShoppingListItems')
       .update({
         item: item.item,
-        quantity: item.quantity,
+        quantity: Math.round(item.quantity * 100) / 100,
         unit: item.unit,
       })
       .eq('id', item.id);
