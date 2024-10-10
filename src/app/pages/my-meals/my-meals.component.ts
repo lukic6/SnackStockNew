@@ -161,8 +161,12 @@ export class MyMealsComponent implements OnInit {
       );
 
       // 5. Show the missing items popup
-      this.missingItems = this.missingItems; // Bind missing items to the popup
-      this.confirmationPopupVisible = true; // Show the popup
+      if (this.missingItems.length > 0) {
+        this.confirmationPopupVisible = true; // Show the popup
+      } else {
+        this.popupResponse = true;
+        await this.proceedWithCooking();
+      }
 
       // Wait for user action in the popup (OK or Cancel will set the popupResponse)
     } catch (error) {

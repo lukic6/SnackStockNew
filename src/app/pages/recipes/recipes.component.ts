@@ -162,9 +162,6 @@ export class RecipesComponent implements OnInit {
   
     this.http.get(url).subscribe(
       (data: any) => {
-        // Handle the recipe details (e.g., display in a new popup or navigate to a detail page)
-        console.log('Recipe Details:', data);
-        // For example, you might store it in a variable and display it in the template
         this.selectedRecipe = {
           ...this.selectedRecipe,
           ...data
@@ -335,16 +332,16 @@ export class RecipesComponent implements OnInit {
           stockItem.quantity -= ingredientQuantity;
           if (stockItem.quantity === 0) {
             // Remove the stock item
-            await this.supabaseService.deleteStockItem(stockItem.id, householdId);
+            // await this.supabaseService.deleteStockItem(stockItem.id, householdId); ***** UMAKNJENO SPREMINJANJE ZALOGE *****
           } else {
             // Update the stock item with the new quantity
-            await this.supabaseService.modifyStockItem(stockItem, householdId);
+            // await this.supabaseService.modifyStockItem(stockItem, householdId); ***** UMAKNJENO SPREMINJANJE ZALOGE *****
           }
         } else {
           // Insufficient stock, deduct available quantity and add the rest to shopping list
           const missingQuantity = ingredientQuantity - stockItem.quantity;
           stockItem.quantity = 0;
-          await this.supabaseService.deleteStockItem(stockItem.id, householdId);
+          // await this.supabaseService.deleteStockItem(stockItem.id, householdId); ***** UMAKNJENO SPREMINJANJE ZALOGE *****
 
           // Add missing quantity to shopping list
           await this.supabaseService.addShoppingListItem({
