@@ -646,6 +646,46 @@ export class SupabaseService {
       throw new Error(`Error deleting meal: ${mealError.message}`);
     }
   }
+
+  async planMealAgain(meal: Meal, mealItems: MealItem[], servings: number) : Promise<void> {
+    // Step 1: Insert a new record into the Meals table with updated servings
+    const newMeal = {
+      householdId: meal.householdId,
+      mealName: meal.mealName,
+      instructions: meal.instructions,
+      servings: servings,
+      active: true 
+    };
+
+    const { data, error } = await this.supabase
+    .from('Meals')
+    .insert([newMeal])
+    .select()
+    .single();
+
+    if (error) {
+      throw new Error(`Error creating new meal: ${error.message}`);
+    }
+
+    const newMealData = data as Meal;
+
+    // Step 2: Insert meal items into the MealItems table for the new meal
+    const newMealId = newMealData.id;
+    const newMealItems = mealItems.map(item => ({
+      mealId: newMealId,
+      item: item.item,
+      quantity: item.quantity,
+      unit: item.unit
+    }));
+
+    const { error: mealItemsError } = await this.supabase
+      .from('MealItems')
+      .insert(newMealItems);
+
+    if (mealItemsError) {
+      throw new Error(`Error adding meal items: ${mealItemsError.message}`);
+    }
+  }
   /// MY-MEALS endregion
   /// OPTIONS region
   async updateUsername(newUsername: string): Promise<void> {

@@ -18,8 +18,8 @@ export class MyMealsComponent implements OnInit {
   selectedMeal: Meal | null = null;
   mealItems: MealItem[] = [];
   popupVisible: boolean = false;
+  numberOfServings: number = 1;
   confirmationPopupVisible: boolean = false;
-
   popupResponse: boolean = false;  // To handle the popup response
   missingItems: { item: string; needed: number; available: number }[] = [];  // Missing ingredients
   matchedItems: { mealItem: MealItem; stockItem: any; convertedQuantity: number }[] = [];  // Matched ingredients
@@ -226,9 +226,28 @@ export class MyMealsComponent implements OnInit {
   }
 
   async planAgain(meal: Meal): Promise<void> {
-    // Functionality to be implemented later
-    console.log('Plan Again:', meal);
-    notify('Plan Again functionality to be implemented.', 'info', 2000);
+    try {
+      const multiplier = Math.round(this.numberOfServings / meal.servings);
+      if (this.mealItems && this.mealItems.length > 0) {
+        this.mealItems.forEach(item => {
+          item.quantity *= multiplier;
+        });
+        await this.supabaseService.planMealAgain(meal, this.mealItems, this.numberOfServings);
+        const householdId = localStorage.getItem('householdId');
+        if (householdId) {
+          this.plannedMeals = await this.supabaseService.getMeals(householdId);
+          this.plannedMeals = this.plannedMeals.filter(m => m.active);
+        }
+        this.popupVisible = false;
+        notify(`Meal "${meal.mealName}" has been planned again!`, 'success', 2000);
+      } else {
+        notify('No ingredients found for this meal.', 'error', 2000);
+        return;
+      }
+    } catch (error) {
+      console.error('Error planning again:', error);
+      notify('Failed to plan again. Please try again later.', 'error', 2000);
+    }
   }
 
   async getIngredientSubstitutes(ingredientName: string): Promise<string[]> {

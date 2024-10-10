@@ -81,14 +81,23 @@
                 </div>
             </div>
             </dx-list>
-            <!-- Plan Again Button for Meal History -->
-            <dx-button
-                *ngIf="!selectedMeal.active"
-                text="Plan Again"
-                stylingMode="contained"
-                type="default"
-                (onClick)="planAgain(selectedMeal)">
-            </dx-button>
+            <!-- Plan Again Container for Meal History -->
+            <div class="plan-again-container" *ngIf="!selectedMeal.active">
+                <dx-number-box
+                        [(value)]="numberOfServings"
+                        [min]="1"
+                        [showSpinButtons]="true"
+                        [width]="100"
+                        label="Servings"
+                        labelMode="static"> 
+                </dx-number-box>
+                <dx-button
+                    text="Plan Again"
+                    stylingMode="contained"
+                    type="default"
+                    (onClick)="planAgain(selectedMeal)">
+                </dx-button>
+            </div>
         </div>
     </dx-popup>
     <dx-popup
