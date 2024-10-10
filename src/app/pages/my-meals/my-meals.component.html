@@ -37,6 +37,8 @@
         [dataSource]="mealHistory"
         [height]="'auto'"
         [showSelectionControls]="false"
+        class="history-list"
+        [pageLoadMode]="'scrollBottom'"
     >
     <div *dxTemplate="let meal of 'item'">
         <div class="meal-item">
@@ -88,5 +90,39 @@
                 (onClick)="planAgain(selectedMeal)">
             </dx-button>
         </div>
+    </dx-popup>
+    <dx-popup
+        [(visible)]="confirmationPopupVisible"
+        [maxWidth]="600"
+        [width]="'90%'"
+        [height]="'auto'"
+        [title]="'Missing Ingredients'"
+        [showTitle]="true"
+        [dragEnabled]="true"
+        [hideOnOutsideClick]="false"
+        (onHiding)="popupResponse = false"
+    >
+    <div>
+        <p>Some ingredients are missing or insufficient:</p>
+        <ul>
+        <li *ngFor="let item of missingItems">
+            {{ item.item }}: {{ item.available }} available, {{ item.needed }} needed
+        </li>
+        </ul>
+    </div>
+    <div class="dx-field">
+        <dx-button
+            text="Cancel"
+            stylingMode="contained"
+            type="danger"
+            (click)="confirmationPopupVisible = false; popupResponse = false"
+        ></dx-button>
+        <dx-button
+            text="Proceed"
+            stylingMode="contained"
+            type="success"
+            (click)="confirmationPopupVisible = false; popupResponse = true; proceedWithCooking()"
+        ></dx-button>
+    </div>
     </dx-popup>
 </div>  

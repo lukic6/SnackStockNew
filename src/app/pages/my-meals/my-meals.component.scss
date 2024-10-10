@@ -20,3 +20,17 @@
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
+
+.dx-field {
+    margin: 0;
+    display: flex;
+    justify-content: right;
+    flex-direction: row-reverse;
+    margin-right: 10px;
+    gap: 10px;
+}
+
+::ng-deep .history-list .dx-list-items {
+    flex-direction: column-reverse;
+    row-gap: 0;
+}

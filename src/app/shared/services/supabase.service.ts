@@ -613,6 +613,39 @@ export class SupabaseService {
 
     return data as MealItem[];
   }
+
+  async updateMealStatus(mealId: string, isActive: boolean): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('Meals')
+      .update({ active: isActive })
+      .eq('id', mealId);
+  
+    if (error) {
+      throw new Error(`Error updating meal status: ${error.message}`);
+    }
+  }
+
+  async deleteMeal(mealId: string): Promise<void> {
+    // Step 1: Delete all related MealItems
+    const { error: mealItemsError } = await this.supabase
+      .from('MealItems')
+      .delete()
+      .eq('mealId', mealId);
+
+    if (mealItemsError) {
+      throw new Error(`Error deleting MealItems: ${mealItemsError.message}`);
+    }
+
+    // Step 2: Delete the meal from Meals table
+    const { error: mealError } = await this.supabase
+      .from('Meals')
+      .delete()
+      .eq('id', mealId);
+
+    if (mealError) {
+      throw new Error(`Error deleting meal: ${mealError.message}`);
+    }
+  }
   /// MY-MEALS endregion
   /// OPTIONS region
   async updateUsername(newUsername: string): Promise<void> {
