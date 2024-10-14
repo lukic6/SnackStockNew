@@ -21,8 +21,8 @@ export class MyMealsComponent implements OnInit {
   numberOfServings: number = 1;
   confirmationPopupVisible: boolean = false;
   popupResponse: boolean = false;  // To handle the popup response
-  missingItems: { item: string; needed: number; available: number }[] = [];  // Missing ingredients
-  matchedItems: { mealItem: MealItem; stockItem: any; convertedQuantity: number }[] = [];  // Matched ingredients
+  missingItems: { item: string; needed: number; available: number; unit: string }[] = [];
+  matchedItems: { mealItem: MealItem; stockItem: any; convertedQuantity: number; unit: string }[] = [];
   currentMealId: string = '';  // Current meal being cooked
   currentMealName: string = '';  // Name of the current meal being cooked
 
@@ -66,101 +66,18 @@ export class MyMealsComponent implements OnInit {
     try {
       this.currentMealId = meal.id;
       this.currentMealName = meal.mealName;
+      const householdId = localStorage.getItem('householdId');
+
       // 1. Fetch Meal Items
       const mealItems: MealItem[] = await this.supabaseService.getMealItems(meal.id);
       
-      // 2. Fetch Stock Items
-      const householdId = localStorage.getItem('householdId');
-      const stockItems = await this.supabaseService.getStockItems(householdId);
+      // 2. Match Meal Items with Stock Items (fuzzy matching + substitutes)
+      const { matchedItems, missingItems } = await this.matchMealItemsWithStock(mealItems, householdId);
 
-      // 3. Initialize Fuse.js for fuzzy matching
-      const fuseOptions = {
-        includeScore: true,
-        threshold: 0.5,
-        keys: ['item']
-      };
-      const fuse = new Fuse(stockItems, fuseOptions);
+      this.missingItems = missingItems;
+      this.matchedItems = matchedItems;
 
-      // Normalize function for ingredient names
-      const normalize = (str: string) => {
-        return str
-          .toLowerCase()
-          .replace(/s$/, '') // Remove plural 's'
-          .replace(/\b(fresh|dried|ground|organic|large|small|medium|whole|fat-free)\b/g, '') // Remove stop words
-          .trim();
-      };
-
-      // 4. Match Meal Items with Stock Items (fuzzy matching + substitutes)
-      this.missingItems = [];
-      this.matchedItems = [];
-
-      await Promise.all(
-        mealItems.map(async (mealItem) => {
-          // First attempt to find an exact match
-          let stockItem = stockItems.find(item => item.item.toLowerCase() === mealItem.item.toLowerCase());
-
-          // **Second Matching Step: Fuzzy Matching**
-          if (!stockItem) {
-            const normalizedIngredientName = normalize(mealItem.item);
-            const results = fuse.search(normalizedIngredientName);
-            if (results.length > 0) {
-              stockItem = results[0].item;
-            }
-          }
-
-          // **Third Matching Step: Use Substitutes**
-          if (!stockItem) {
-            const substitutes = await this.getIngredientSubstitutes(mealItem.item);
-            for (const substitute of substitutes) {
-              const normalizedSubstitute = normalize(substitute);
-
-              // Try exact match with substitute
-              stockItem = stockItems.find(item => normalize(item.item) === normalizedSubstitute);
-              if (stockItem) {
-                break;
-              }
-
-              // If still no match, try fuzzy matching with substitute
-              const substituteResults = fuse.search(normalizedSubstitute);
-              if (substituteResults.length > 0) {
-                stockItem = substituteResults[0].item;
-                break;
-              }
-            }
-          }
-
-          if (stockItem) {
-            // Perform unit conversion before deduction
-            const convertedQuantity = await this.supabaseService.convertUnits(
-              mealItem.quantity,
-              mealItem.unit,
-              stockItem.unit,
-              mealItem.item
-            );
-
-            // Check if stock is sufficient after conversion
-            if (stockItem.quantity >= convertedQuantity) {
-              this.matchedItems.push({ mealItem, stockItem, convertedQuantity });
-            } else {
-              // Insufficient stock
-              this.missingItems.push({
-                item: mealItem.item,
-                needed: convertedQuantity,
-                available: stockItem.quantity,
-              });
-            }
-          } else {
-            // Item not found in stock
-            this.missingItems.push({
-              item: mealItem.item,
-              needed: mealItem.quantity,
-              available: 0,
-            });
-          }
-        })
-      );
-
-      // 5. Show the missing items popup
+      // 3. Show the missing items popup or proceed
       if (this.missingItems.length > 0) {
         this.confirmationPopupVisible = true; // Show the popup
       } else {
@@ -237,7 +154,33 @@ export class MyMealsComponent implements OnInit {
           item.quantity *= multiplier;
         });
         await this.supabaseService.planMealAgain(meal, this.mealItems, this.numberOfServings);
-        const householdId = localStorage.getItem('householdId');
+        let householdId = localStorage.getItem('householdId');
+        let shoppingListId = "";
+
+        if (householdId) {
+          const {activeItems, inactiveLists, activeShoppingListId} = await this.supabaseService.getShoppingLists(householdId);
+          shoppingListId = activeShoppingListId;
+        }
+
+        // Create a new shopping list if none exists
+        if (!shoppingListId && householdId) {
+          shoppingListId = await this.supabaseService.createShoppingList(householdId);
+        }
+
+        // 1. Match Meal Items with Stock Items (fuzzy matching + substitutes)
+        const { missingItems } = await this.matchMealItemsWithStock(this.mealItems, householdId);
+
+        await Promise.all(
+          missingItems.map(async (missingItem) => {
+            await this.supabaseService.addShoppingListItem({
+              shoppingListId: shoppingListId,
+              item: missingItem.item,
+              quantity: missingItem.needed,
+              unit: missingItem.unit
+            });
+          })
+        );
+
         if (householdId) {
           this.plannedMeals = await this.supabaseService.getMeals(householdId);
           this.plannedMeals = this.plannedMeals.filter(m => m.active);
@@ -252,6 +195,105 @@ export class MyMealsComponent implements OnInit {
       console.error('Error planning again:', error);
       notify('Failed to plan again. Please try again later.', 'error', 2000);
     }
+  }
+
+  async matchMealItemsWithStock(mealItems: MealItem[], householdId: string | null): Promise<{
+    matchedItems: { mealItem: MealItem; stockItem: any; convertedQuantity: number; unit: string }[],
+    missingItems: { item: string; needed: number; available: number; unit: string }[]}> {
+    
+    if (!householdId) {
+      notify('Household not found, please try again later.', 'error', 2000);
+      return { matchedItems: [], missingItems: [] };
+    }
+    const stockItems = await this.supabaseService.getStockItems(householdId);
+
+    // Initialize Fuse.js for fuzzy matching
+    const fuseOptions = {
+      includeScore: true,
+      threshold: 0.5,
+      keys: ['item']
+    };
+    const fuse = new Fuse(stockItems, fuseOptions);
+
+    // Normalize function for ingredient names
+    const normalize = (str: string) => {
+      return str
+        .toLowerCase()
+        .replace(/s$/, '') // Remove plural 's'
+        .replace(/\b(fresh|dried|ground|organic|large|small|medium|whole|fat-free)\b/g, '') // Remove stop words
+        .trim();
+    };
+
+    const missingItems: { item: string; needed: number; available: number; unit: string }[] = [];
+    const matchedItems: { mealItem: MealItem; stockItem: any; convertedQuantity: number; unit: string }[] = [];
+
+    await Promise.all(
+      mealItems.map(async (mealItem) => {
+        // First attempt to find an exact match
+        let stockItem = stockItems.find(item => item.item.toLowerCase() === mealItem.item.toLowerCase());
+
+        // **Second Matching Step: Fuzzy Matching**
+        if (!stockItem) {
+          const normalizedIngredientName = normalize(mealItem.item);
+          const results = fuse.search(normalizedIngredientName);
+          if (results.length > 0) {
+            stockItem = results[0].item;
+          }
+        }
+
+        // **Third Matching Step: Use Substitutes**
+        if (!stockItem) {
+          const substitutes = await this.getIngredientSubstitutes(mealItem.item);
+          for (const substitute of substitutes) {
+            const normalizedSubstitute = normalize(substitute);
+
+            // Try exact match with substitute
+            stockItem = stockItems.find(item => normalize(item.item) === normalizedSubstitute);
+            if (stockItem) {
+              break;
+            }
+
+            // If still no match, try fuzzy matching with substitute
+            const substituteResults = fuse.search(normalizedSubstitute);
+            if (substituteResults.length > 0) {
+              stockItem = substituteResults[0].item;
+              break;
+            }
+          }
+        }
+
+        if (stockItem) {
+          // Perform unit conversion before checking availability
+          const convertedQuantity = await this.supabaseService.convertUnits(
+            mealItem.quantity,
+            mealItem.unit,
+            stockItem.unit,
+            mealItem.item
+          );
+
+          if (stockItem.quantity >= convertedQuantity) {
+            matchedItems.push({ mealItem, stockItem, convertedQuantity, unit: stockItem.unit });
+          } else {
+            missingItems.push({
+              item: mealItem.item,
+              needed: convertedQuantity,
+              available: stockItem.quantity,
+              unit: stockItem.unit
+            });
+          }
+        } else {
+          // Item not found in stock
+          missingItems.push({
+            item: mealItem.item,
+            needed: mealItem.quantity,
+            available: 0,
+            unit: mealItem.unit
+          });
+        }
+      })
+    );
+
+    return { matchedItems, missingItems };
   }
 
   async getIngredientSubstitutes(ingredientName: string): Promise<string[]> {
